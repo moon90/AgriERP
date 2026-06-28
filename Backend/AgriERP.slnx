@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Application/AgriERP.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Domain/AgriERP.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Infrastructure/AgriERP.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Livestock/">
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Application/AgriERP.Modules.Livestock.Application.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Domain/AgriERP.Modules.Livestock.Domain.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Infrastructure/AgriERP.Modules.Livestock.Infrastructure.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Presentation/AgriERP.Modules.Livestock.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
+  </Folder>
+</Solution>

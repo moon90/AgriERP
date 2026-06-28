@@ -1,0 +1,27 @@
+# =========================
+# .NET / C# 
+# =========================
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.dbmdl
+.vs/
+*.sqlite
+
+# =========================
+# Angular / Node / Nx
+# =========================
+node_modules/
+dist/
+tmp/
+out-tsc/
+.nx/cache/
+
+# =========================
+# OS / Environment
+# =========================
+.DS_Store
+Thumbs.db
+.env
+appsettings.Development.json
