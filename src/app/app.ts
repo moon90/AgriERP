@@ -1,13 +1,18 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NxWelcome } from './nx-welcome';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api'; // এটি ইমপোর্ট করা হলো
 
 @Component({
-  imports: [NxWelcome, RouterModule],
+  standalone: true,
+  imports: [RouterModule, ToastModule],
+  providers: [MessageService], // এখানে প্রোভাইডারটি যুক্ত করা হলো
   selector: 'app-root',
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  template: `
+    <p-toast position="top-right"></p-toast> 
+    <router-outlet></router-outlet>
+  `
 })
 export class App {
-  protected title = 'agri-erp-workspace';
+  // এখানে আর কোনো api call বা onInit থাকবে না
 }
