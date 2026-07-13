@@ -1,0 +1,6 @@
+@AgriERP.Modules.Inventory.Presentation_HostAddress = http://localhost:5145
+
+GET {{AgriERP.Modules.Inventory.Presentation_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

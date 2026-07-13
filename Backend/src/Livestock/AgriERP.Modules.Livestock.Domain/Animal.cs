@@ -1,4 +1,5 @@
-﻿using AgriERP.BuildingBlocks.Domain;
+using AgriERP.BuildingBlocks.Domain;
+using AgriERP.Modules.Livestock.Domain.Events;
 using AgriERP.Modules.Livestock.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace AgriERP.Modules.Livestock.Domain
 {
-    public class Animal : AggregateRoot, IMultiTenant
+    public class Animal : AggregateRoot, IMultiTenant, IAuditable
     {
         public Guid TenantId { get; set; } // IMultiTenant interface implementation
         public string TagNumber { get; private set; } // RFID ba Asset Tag
@@ -16,8 +17,18 @@ namespace AgriERP.Modules.Livestock.Domain
         public DateTime DateOfBirth { get; private set; }
         public decimal CurrentWeight { get; private set; }
 
+        // Auditing properties
+        public string? CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
         // EF Core-er jonno empty constructor
-        private Animal() { }
+        private Animal() 
+        {
+            TagNumber = null!;
+            Species = null!;
+        }
 
         // Factory Method: Notun animal register korar jonno
         public static Animal Register(Guid tenantId, string tagNumber, string species, AnimalPurpose purpose, DateTime dob, decimal initialWeight)
@@ -58,8 +69,11 @@ namespace AgriERP.Modules.Livestock.Domain
 
             Status = AnimalStatus.Slaughtered;
 
-            // Ekhane amra Domain Event fire korbo jeta Inventory module shune mangsho toiri korbe
-            // AddDomainEvent(new AnimalSlaughteredEvent(this.Id, this.CurrentWeight));
+            // গরুর মোট ওজনের সাধারণত ৫৫-৬০% মাংস হয় (বিজনেস রুল)
+            var estimatedMeatYield = CurrentWeight * 0.60m;
+
+            // বাতাসে ইভেন্ট ছুঁড়ে দেওয়া হলো (AggregateRoot-এর AddDomainEvent মেথড দিয়ে)
+            AddDomainEvent(new AnimalSlaughteredEvent(this.Id, this.TenantId, estimatedMeatYield));
         }
     }
 }

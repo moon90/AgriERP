@@ -1,11 +1,15 @@
-﻿using AgriERP.Modules.Livestock.Application.Animals.Commands.RegisterAnimal;
+﻿using AgriERP.Modules.Auth.Presentation.Authorization;
+using AgriERP.Modules.Livestock.Application.Animals.Commands.RegisterAnimal;
+using AgriERP.Modules.Livestock.Application.Animals.Commands.SlaughterAnimal;
 using AgriERP.Modules.Livestock.Application.Animals.Queries.GetAnimalsList;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgriERP.Modules.Livestock.Presentation.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/v1/livestock/[controller]")]
     public class AnimalsController : ControllerBase
@@ -18,6 +22,7 @@ namespace AgriERP.Modules.Livestock.Presentation.Controllers
         }
 
         [HttpPost]
+        [RequirePermission("Animal.Create")] // ডাইনামিক পারমিশন চেক!
         public async Task<IActionResult> RegisterAnimal([FromBody] RegisterAnimalCommand command, CancellationToken cancellationToken)
         {
             // API সরাসরি ডেটাবেস সেভ করবে না, সে শুধু Command টি MediatR এর কাছে পাঠিয়ে দেবে
@@ -34,6 +39,16 @@ namespace AgriERP.Modules.Livestock.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
 
             return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/slaughter")]
+        [RequirePermission("Animal.View")] // ডাইনামিক পারমিশন চেক!
+        public async Task<IActionResult> SlaughterAnimal(Guid id, CancellationToken cancellationToken)
+        {
+            var command = new SlaughterAnimalCommand(id);
+            await _sender.Send(command, cancellationToken);
+
+            return Ok(new { Message = "Animal processed for slaughter successfully." });
         }
     }
 }

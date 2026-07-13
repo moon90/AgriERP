@@ -1,4 +1,4 @@
-﻿using AgriERP.BuildingBlocks.Application;
+using AgriERP.BuildingBlocks.Application;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +10,7 @@ namespace AgriERP.BuildingBlocks.Infrastructure
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<ITenantProvider, HttpTenantProvider>();
+            services.AddScoped<ICurrentUserProvider, HttpCurrentUserProvider>();
 
             return services;
         }
