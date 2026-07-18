@@ -1,6 +1,0 @@
-@AgriERP.Modules.Livestock.Presentation_HostAddress = http://localhost:5069
-
-GET {{AgriERP.Modules.Livestock.Presentation_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
