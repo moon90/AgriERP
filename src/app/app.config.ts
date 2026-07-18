@@ -13,9 +13,7 @@ export const appConfig: ApplicationConfig = {
         provideBrowserGlobalErrorListeners(),
         provideAnimationsAsync(), // অ্যানিমেশন চালু করা হলো
         provideRouter(appRoutes),
-        provideHttpClient(withInterceptors([tenantInterceptor])),
-        // এখানে interceptor টি যুক্ত করা হলো
-        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClient(withInterceptors([tenantInterceptor, authInterceptor])),
         providePrimeNG({
       theme: {
         preset: Lara

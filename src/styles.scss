@@ -2,9 +2,70 @@
 @import "primeicons/primeicons.css";
 @import "primeflex/primeflex.css";
 
-/* Enterprise CSS Resets */
+/* Premium Enterprise Variables & Theme Overrides */
+:root {
+  --primary-color: #3498db;
+  --success-color: #2ecc71;
+  --warning-color: #f1c40f;
+  --danger-color: #e74c3c;
+  --dark-bg: #1e293b;
+  --surface-bg: #f8fafc;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --premium-border: 1px solid #e2e8f0;
+}
+
+/* Global Font & Body Overrides */
 body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f8f9fa;
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--surface-bg);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbars styling for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Premium Card & Section Styling Utilities */
+.premium-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: var(--premium-border);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.gradient-alert {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-radius: 12px;
+  border-left: 6px solid #64748b;
+  padding: 1.25rem;
+  box-shadow: var(--card-shadow);
+}
+
+/* primeNG overrides for modern dark layouts */
+.p-card {
+  border-radius: 12px !important;
+  box-shadow: var(--card-shadow) !important;
+  border: var(--premium-border) !important;
 }
