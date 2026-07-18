@@ -17,8 +17,13 @@ using AgriERP.Modules.Finance.Application;
 using AgriERP.Modules.Finance.Infrastructure.Persistence;
 using AgriERP.Modules.Finance.Presentation.Controllers;
 using AgriERP.Modules.Finance.Application.Common;
+using AgriERP.Modules.Telemetry.Application;
+using AgriERP.Modules.Telemetry.Application.Common;
+using AgriERP.Modules.Telemetry.Infrastructure.Persistence;
+using AgriERP.Modules.Telemetry.Presentation.Controllers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -30,7 +35,9 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(AnimalsController).Assembly)
     .AddApplicationPart(typeof(StocksController).Assembly)
     .AddApplicationPart(typeof(AuthController).Assembly)
-    .AddApplicationPart(typeof(LedgerController).Assembly);
+    .AddApplicationPart(typeof(LedgerController).Assembly)
+    .AddApplicationPart(typeof(TelemetryController).Assembly)
+    .AddApplicationPart(typeof(Program).Assembly);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -50,6 +57,7 @@ builder.Services.AddLivestockApplication();
 builder.Services.AddInventoryApplication();
 builder.Services.AddAuthApplication();
 builder.Services.AddFinanceApplication();
+builder.Services.AddTelemetryApplication();
 
 // 6. DB Context setup for SQL Server
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -58,11 +66,16 @@ builder.Services.AddDbContext<LivestockDbContext>(options => options.UseSqlServe
 builder.Services.AddDbContext<InventoryDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<AuthDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<FinanceDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<TelemetryDbContext>(options => options.UseSqlServer(connectionString));
 
 // Map db context interfaces
 builder.Services.AddScoped<IAuthDbContext>(provider => provider.GetRequiredService<AuthDbContext>());
 builder.Services.AddScoped<ILivestockDbContext>(provider => provider.GetRequiredService<LivestockDbContext>());
 builder.Services.AddScoped<IFinanceDbContext>(provider => provider.GetRequiredService<FinanceDbContext>());
+builder.Services.AddScoped<ITelemetryDbContext>(provider => provider.GetRequiredService<TelemetryDbContext>());
+
+// Register test event handler for integration verification
+builder.Services.AddScoped<INotificationHandler<AgriERP.BuildingBlocks.Application.Events.StockValueConsumedIntegrationEvent>, AgriERP.Api.Controllers.TestStockValueConsumedIntegrationEventHandler>();
 
 // Exception handling
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

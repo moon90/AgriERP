@@ -13,10 +13,12 @@ namespace AgriERP.Modules.Inventory.Application.Stocks.Events
     public class InventoryConsumedIntegrationEventHandler : INotificationHandler<InventoryConsumedIntegrationEvent>
     {
         private readonly InventoryDbContext _context;
+        private readonly IPublisher _publisher;
 
-        public InventoryConsumedIntegrationEventHandler(InventoryDbContext context)
+        public InventoryConsumedIntegrationEventHandler(InventoryDbContext context, IPublisher publisher)
         {
             _context = context;
+            _publisher = publisher;
         }
 
         public async Task Handle(InventoryConsumedIntegrationEvent notification, CancellationToken cancellationToken)
@@ -24,6 +26,7 @@ namespace AgriERP.Modules.Inventory.Application.Stocks.Events
             var tenantId = notification.TenantId;
             var stockItemId = notification.StockItemId;
             var remainingToDeduct = notification.QuantityConsumed;
+            decimal totalCostBasis = 0m;
 
             if (remainingToDeduct <= 0) return;
 
@@ -51,6 +54,9 @@ namespace AgriERP.Modules.Inventory.Application.Stocks.Events
                     batch.DeductQuantity(quantityDeducted);
                 }
 
+                // Accumulate cost basis (quantity * unit cost basis of this batch)
+                totalCostBasis += quantityDeducted * batch.CostBasis;
+
                 // Log a negative stock movement of type "Outflow"
                 var movement = new StockMovement(
                     tenantId: tenantId,
@@ -70,6 +76,17 @@ namespace AgriERP.Modules.Inventory.Application.Stocks.Events
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Publish the calculated valuation event for Finance ledger synchronization
+            var valueConsumedEvent = new StockValueConsumedIntegrationEvent(
+                tenantId: tenantId,
+                stockItemId: stockItemId,
+                quantityConsumed: notification.QuantityConsumed - remainingToDeduct,
+                totalCost: totalCostBasis,
+                referenceId: notification.ReferenceId
+            );
+
+            await _publisher.Publish(valueConsumedEvent, cancellationToken);
         }
     }
 }

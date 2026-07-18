@@ -32,6 +32,12 @@
     <Project Path="src/Livestock/AgriERP.Modules.Livestock.Infrastructure/AgriERP.Modules.Livestock.Infrastructure.csproj" />
     <Project Path="src/Livestock/AgriERP.Modules.Livestock.Presentation/AgriERP.Modules.Livestock.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Telemetry/">
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Domain/AgriERP.Modules.Telemetry.Domain.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Application/AgriERP.Modules.Telemetry.Application.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Infrastructure/AgriERP.Modules.Telemetry.Infrastructure.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Presentation/AgriERP.Modules.Telemetry.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

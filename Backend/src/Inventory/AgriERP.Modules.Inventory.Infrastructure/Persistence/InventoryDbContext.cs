@@ -16,6 +16,8 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
         public DbSet<StockMovement> StockMovements { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        public DbSet<SalesOrder> SalesOrders { get; set; }
+        public DbSet<SalesOrderItem> SalesOrderItems { get; set; }
 
         public InventoryDbContext(
             DbContextOptions<InventoryDbContext> options,
@@ -90,6 +92,27 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
             modelBuilder.Entity<PurchaseOrderItem>(entity =>
             {
                 entity.ToTable("PurchaseOrderItems");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Quantity).HasPrecision(18, 4);
+                entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<SalesOrder>(entity =>
+            {
+                entity.ToTable("SalesOrders");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasMany(e => e.Items)
+                      .WithOne()
+                      .HasForeignKey(i => i.SalesOrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SalesOrderItem>(entity =>
+            {
+                entity.ToTable("SalesOrderItems");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasPrecision(18, 4);
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
