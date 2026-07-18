@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Auth\AgriERP.Modules.Auth.Application\AgriERP.Modules.Auth.Application.csproj" />
+    <ProjectReference Include="..\..\Auth\AgriERP.Modules.Auth.Infrastructure\AgriERP.Modules.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Auth\AgriERP.Modules.Auth.Presentation\AgriERP.Modules.Auth.Presentation.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\AgriERP.BuildingBlocks.Domain\AgriERP.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\AgriERP.BuildingBlocks.Infrastructure\AgriERP.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Finance\AgriERP.Modules.Finance.Application\AgriERP.Modules.Finance.Application.csproj" />
+    <ProjectReference Include="..\..\Finance\AgriERP.Modules.Finance.Infrastructure\AgriERP.Modules.Finance.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Finance\AgriERP.Modules.Finance.Presentation\AgriERP.Modules.Finance.Presentation.csproj" />
+    <ProjectReference Include="..\..\Inventory\AgriERP.Modules.Inventory.Application\AgriERP.Modules.Inventory.Application.csproj" />
+    <ProjectReference Include="..\..\Inventory\AgriERP.Modules.Inventory.Infrastructure\AgriERP.Modules.Inventory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Inventory\AgriERP.Modules.Inventory.Presentation\AgriERP.Modules.Inventory.Presentation.csproj" />
+    <ProjectReference Include="..\..\Livestock\AgriERP.Modules.Livestock.Application\AgriERP.Modules.Livestock.Application.csproj" />
+    <ProjectReference Include="..\..\Livestock\AgriERP.Modules.Livestock.Infrastructure\AgriERP.Modules.Livestock.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Livestock\AgriERP.Modules.Livestock.Presentation\AgriERP.Modules.Livestock.Presentation.csproj" />
+    <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Application\AgriERP.Modules.Telemetry.Application.csproj" />
+    <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Infrastructure\AgriERP.Modules.Telemetry.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Presentation\AgriERP.Modules.Telemetry.Presentation.csproj" />
+  </ItemGroup>
+
+</Project>

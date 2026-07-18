@@ -1,0 +1,44 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Auth/">
+    <Project Path="src/Auth/AgriERP.Modules.Auth.Application/AgriERP.Modules.Auth.Application.csproj" Id="fea51f14-348a-4534-8ea5-d98636d3437e" />
+    <Project Path="src/Auth/AgriERP.Modules.Auth.Domain/AgriERP.Modules.Auth.Domain.csproj" Id="a4692faf-5d3b-45a2-9764-5cca54f21129" />
+    <Project Path="src/Auth/AgriERP.Modules.Auth.Infrastructure/AgriERP.Modules.Auth.Infrastructure.csproj" Id="2b2f10d2-1b4b-48c4-908d-d87c429322af" />
+    <Project Path="src/Auth/AgriERP.Modules.Auth.Presentation/AgriERP.Modules.Auth.Presentation.csproj" Id="a812b30f-9424-4d84-8387-24beeb736d10" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/AgriERP.Api/AgriERP.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Application/AgriERP.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Domain/AgriERP.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/AgriERP.BuildingBlocks.Infrastructure/AgriERP.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Inventory/">
+    <Project Path="src/Inventory/AgriERP.Modules.Inventory.Application/AgriERP.Modules.Inventory.Application.csproj" Id="b7cd7277-06c6-4010-bb0e-454b40feb279" />
+    <Project Path="src/Inventory/AgriERP.Modules.Inventory.Domain/AgriERP.Modules.Inventory.Domain.csproj" Id="6d2055f0-efb7-4a9a-a80d-50a46b1825c3" />
+    <Project Path="src/Inventory/AgriERP.Modules.Inventory.Infrastructure/AgriERP.Modules.Inventory.Infrastructure.csproj" Id="27cd20d8-bf5b-48ad-a498-760e7b4398a3" />
+    <Project Path="src/Inventory/AgriERP.Modules.Inventory.Presentation/AgriERP.Modules.Inventory.Presentation.csproj" Id="3f5c80fc-0b2c-4762-9a6c-8f26cb7965e9" />
+  </Folder>
+  <Folder Name="/src/Finance/">
+    <Project Path="src/Finance/AgriERP.Modules.Finance.Domain/AgriERP.Modules.Finance.Domain.csproj" Id="d691a0b6-7f79-4b0d-9730-8bc800dc2a51" />
+    <Project Path="src/Finance/AgriERP.Modules.Finance.Application/AgriERP.Modules.Finance.Application.csproj" Id="de5a6305-6490-449d-b19f-e138e14107bd" />
+    <Project Path="src/Finance/AgriERP.Modules.Finance.Infrastructure/AgriERP.Modules.Finance.Infrastructure.csproj" Id="877c1e70-d5ff-4b82-b2ea-ed47c2f6ce29" />
+    <Project Path="src/Finance/AgriERP.Modules.Finance.Presentation/AgriERP.Modules.Finance.Presentation.csproj" Id="6ffdf020-0010-4b1c-b7c6-b0b24490c7d5" />
+  </Folder>
+  <Folder Name="/src/Livestock/">
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Application/AgriERP.Modules.Livestock.Application.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Domain/AgriERP.Modules.Livestock.Domain.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Infrastructure/AgriERP.Modules.Livestock.Infrastructure.csproj" />
+    <Project Path="src/Livestock/AgriERP.Modules.Livestock.Presentation/AgriERP.Modules.Livestock.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Telemetry/">
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Domain/AgriERP.Modules.Telemetry.Domain.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Application/AgriERP.Modules.Telemetry.Application.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Infrastructure/AgriERP.Modules.Telemetry.Infrastructure.csproj" />
+    <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Presentation/AgriERP.Modules.Telemetry.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
+  </Folder>
+</Solution>

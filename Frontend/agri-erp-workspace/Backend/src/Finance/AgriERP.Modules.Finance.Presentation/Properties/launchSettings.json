@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "AgriERP.Modules.Finance.Presentation": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:61983;http://localhost:61984"
+    }
+  }
+}
