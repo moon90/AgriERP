@@ -1,0 +1,68 @@
+<div class="layout-container">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            🌱 AgriERP
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📊</span> Dashboard
+            </a>
+
+            @if (authService.hasPermission('Users.View')) {
+            <a routerLink="/users" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">👥</span> Employee Management
+            </a>
+            }
+
+            @if (authService.hasPermission('Roles.Manage')) {
+            <a routerLink="/roles" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🔐</span> Roles & Permissions
+            </a>
+            }
+
+            @if (authService.hasPermission('Livestock.View')) {
+            <a routerLink="/livestock" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🐄</span> Livestock & Animals
+            </a>
+            }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/inventory" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📦</span> Inventory & Stock
+            </a>
+            }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/procurement" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">💼</span> Procurement Management
+            </a>
+            }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/sales" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📈</span> Sales & Customer Contracts
+            </a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <button (click)="logout()" class="logout-btn">Log Out</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <span class="username">Admin User</span>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <router-outlet></router-outlet>
+        </div>
+    </main>
+
+</div>
