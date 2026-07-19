@@ -66,6 +66,9 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.Property(e => e.Quantity).HasPrecision(18, 4);
                 entity.Property(e => e.CostBasis).HasPrecision(18, 2);
                 entity.HasIndex(e => new { e.TenantId, e.BatchNumber }).IsUnique();
+                entity.HasIndex(e => e.StockItemId);
+                entity.HasIndex(e => e.WarehouseId);
+                entity.Property<byte[]>("RowVersion").IsRowVersion();
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
             });
 
@@ -74,6 +77,7 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.ToTable("StockMovements");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasPrecision(18, 4);
+                entity.HasIndex(e => e.StockBatchId);
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
             });
 
@@ -82,6 +86,8 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.ToTable("PurchaseOrders");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.VendorId);
+                entity.HasIndex(e => e.Status);
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.HasMany(e => e.Items)
                       .WithOne()
@@ -96,6 +102,7 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.Property(e => e.Quantity).HasPrecision(18, 4);
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.StockItemId);
             });
 
             modelBuilder.Entity<SalesOrder>(entity =>
@@ -103,6 +110,8 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.ToTable("SalesOrders");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.CustomerId);
+                entity.HasIndex(e => e.Status);
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.HasMany(e => e.Items)
                       .WithOne()
@@ -117,6 +126,7 @@ namespace AgriERP.Modules.Inventory.Infrastructure.Persistence
                 entity.Property(e => e.Quantity).HasPrecision(18, 4);
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.StockItemId);
             });
         }
     }
