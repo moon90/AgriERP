@@ -45,6 +45,12 @@
                 <span class="icon">📈</span> Sales & Customer Contracts
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/hr" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">👤</span> HR & Employee Payroll
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

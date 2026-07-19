@@ -21,6 +21,12 @@ using AgriERP.Modules.Finance.Infrastructure.Persistence;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetTrialBalance;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetIncomeStatement;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetBalanceSheet;
+using AgriERP.Modules.HR.Infrastructure.Persistence;
+using AgriERP.Modules.HR.Application.Employees.Commands.CreateEmployee;
+using AgriERP.Modules.HR.Application.TimeCards.Commands.LogTimeCard;
+using AgriERP.Modules.HR.Application.TimeCards.Commands.ApproveTimeCards;
+using AgriERP.Modules.HR.Application.Payroll.Commands.ProcessPayroll;
+using AgriERP.Modules.HR.Application.Payroll.Commands.PayPayroll;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,6 +52,7 @@ namespace AgriERP.Api.Controllers
         private readonly InventoryDbContext _inventoryDb;
         private readonly TelemetryDbContext _telemetryDb;
         private readonly FinanceDbContext _financeDb;
+        private readonly HrDbContext _hrDb;
         private readonly ITenantProvider _tenantProvider;
 
         public IntegrationTestController(
@@ -55,6 +62,7 @@ namespace AgriERP.Api.Controllers
             InventoryDbContext inventoryDb,
             TelemetryDbContext telemetryDb,
             FinanceDbContext financeDb,
+            HrDbContext hrDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -63,6 +71,7 @@ namespace AgriERP.Api.Controllers
             _inventoryDb = inventoryDb;
             _telemetryDb = telemetryDb;
             _financeDb = financeDb;
+            _hrDb = hrDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -823,6 +832,174 @@ namespace AgriERP.Api.Controllers
                         "SalesOrderShippedIntegrationEvent published to Finance sub-ledger.",
                         "Revenue Journal Entry posted (Debit AR 1100 by $750.00 / Credit Sales Revenue 4100 by $750.00).",
                         "COGS Journal Entry posted (Debit COGS 5200 by $350.00 / Credit Inventory Asset 1200 by $350.00).",
+                        "Accrual balances verified in the Trial Balance report."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-payroll-verification")]
+        public async Task<IActionResult> RunPayrollVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a test Employee
+                var createEmpCommand = new CreateEmployeeCommand(
+                    FirstName: "Jane",
+                    LastName: "Smith",
+                    Email: "jane.smith@agri-erp-test.com",
+                    Phone: "555-0199",
+                    Role: "Operations Supervisor",
+                    BaseHourlyRate: 25.00m,
+                    MonthlySalary: 0.00m,
+                    IsHourly: true
+                );
+                var employeeId = await _sender.Send(createEmpCommand, cancellationToken);
+
+                // 2. Log 4 time cards of 10 hours each (Total 40 hours)
+                var baseDate = DateTime.UtcNow.Date.AddDays(-5);
+                var clockIn = new TimeSpan(8, 0, 0);  // 8:00 AM
+                var clockOut = new TimeSpan(18, 0, 0); // 6:00 PM (10 hours)
+
+                var cardIds = new System.Collections.Generic.List<Guid>();
+                for (int i = 0; i < 4; i++)
+                {
+                    var logCommand = new LogTimeCardCommand(employeeId, baseDate.AddDays(i), clockIn, clockOut);
+                    var cardId = await _sender.Send(logCommand, cancellationToken);
+                    cardIds.Add(cardId);
+                }
+
+                // 3. Approve Time cards
+                var approveCommand = new ApproveTimeCardsCommand(employeeId, baseDate.AddDays(-1), baseDate.AddDays(5));
+                await _sender.Send(approveCommand, cancellationToken);
+
+                // Verify timecards are approved
+                var unapprovedCount = await _hrDb.TimeCards
+                    .Where(tc => tc.EmployeeId == employeeId && !tc.IsApproved)
+                    .CountAsync(cancellationToken);
+                if (unapprovedCount > 0)
+                {
+                    return BadRequest(new { Success = false, Error = "Time card approval process failed." });
+                }
+
+                // 4. Process Payroll Period & calculate slips
+                // Gross: 40 hours * $25.00/hr = $1,000.00
+                // Tax: $150.00 (15% rate)
+                // Net: $850.00
+                var processCommand = new ProcessPayrollCommand(baseDate.AddDays(-1), baseDate.AddDays(5));
+                var periodId = await _sender.Send(processCommand, cancellationToken);
+
+                var period = await _hrDb.PayrollPeriods
+                    .FirstOrDefaultAsync(p => p.Id == periodId && p.TenantId == testTenantId, cancellationToken);
+                var payslip = await _hrDb.Payslips
+                    .FirstOrDefaultAsync(s => s.PayrollPeriodId == periodId && s.EmployeeId == employeeId, cancellationToken);
+
+                if (period == null || period.Status != "Processed")
+                {
+                    return BadRequest(new { Success = false, Error = $"Payroll period processing failed. Status: {period?.Status}" });
+                }
+
+                if (payslip == null || payslip.GrossEarnings != 1000.00m || payslip.TaxDeductions != 150.00m || payslip.NetPay != 850.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Payslip calculations are incorrect. Gross: {payslip?.GrossEarnings}, Tax: {payslip?.TaxDeductions}, Net: {payslip?.NetPay}" });
+                }
+
+                // 5. Release Payouts (marks slips paid, dispatches integration event to Finance)
+                var payCommand = new PayPayrollCommand(periodId);
+                await _sender.Send(payCommand, cancellationToken);
+
+                // Verify payslip and period states
+                var updatedSlip = await _hrDb.Payslips.FirstOrDefaultAsync(s => s.Id == payslip.Id, cancellationToken);
+                var updatedPeriod = await _hrDb.PayrollPeriods.FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken);
+                if (updatedSlip?.Status != "Paid" || updatedPeriod?.Status != "Paid")
+                {
+                    return BadRequest(new { Success = false, Error = "Release payroll payment execution failed to set status." });
+                }
+
+                // 6. Verify GL ledger journal entry postings in Finance module
+                // Gross Wages: Debit Wages & Salaries Expense (5100) by $1,000.00
+                // Tax Deductions: Credit Payroll Tax Liability (2200) by $150.00
+                // Net Pay Cash: Credit Cash & Bank (1010) by $850.00
+                var journalEntry = await _financeDb.JournalEntries
+                    .Include(je => je.Lines)
+                    .FirstOrDefaultAsync(je => je.TenantId == testTenantId && je.IsPosted, cancellationToken);
+
+                if (journalEntry == null)
+                {
+                    return BadRequest(new { Success = false, Error = "Double-entry JournalEntry was not posted automatically on payroll payment." });
+                }
+
+                if (journalEntry.Lines.Count != 3)
+                {
+                    return BadRequest(new { Success = false, Error = $"Payroll JournalEntry line count is incorrect. Expected: 3, Actual: {journalEntry.Lines.Count}" });
+                }
+
+                var debitExpense = journalEntry.Lines.FirstOrDefault(l => l.DebitAmount == 1000.00m);
+                var creditTax = journalEntry.Lines.FirstOrDefault(l => l.CreditAmount == 150.00m);
+                var creditCash = journalEntry.Lines.FirstOrDefault(l => l.CreditAmount == 850.00m);
+
+                if (debitExpense == null || creditTax == null || creditCash == null)
+                {
+                    return BadRequest(new { Success = false, Error = "Balanced double-entry values are incorrect." });
+                }
+
+                // Verify Trial Balance totals
+                var trialBalanceQuery = new GetTrialBalanceQuery();
+                var trialBalances = await _sender.Send(trialBalanceQuery, cancellationToken);
+
+                var wagesTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "5100");
+                if (wagesTrial == null || wagesTrial.TotalDebits != 1000.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Trial balance check failed for Wages Expense (5100). TotalDebits: {wagesTrial?.TotalDebits}" });
+                }
+
+                var taxTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "2200");
+                if (taxTrial == null || taxTrial.TotalCredits != 150.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Trial balance check failed for Tax Liability (2200). TotalCredits: {taxTrial?.TotalCredits}" });
+                }
+
+                var cashTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "1010");
+                if (cashTrial == null || cashTrial.TotalCredits != 850.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Trial balance check failed for Cash (1010). TotalCredits: {cashTrial?.TotalCredits}" });
+                }
+
+                // 7. Clean up database records
+                // Remove GL postings
+                _financeDb.TransactionLines.RemoveRange(journalEntry.Lines);
+                _financeDb.JournalEntries.Remove(journalEntry);
+                var accounts = await _financeDb.GeneralLedgerAccounts
+                    .Where(a => a.TenantId == testTenantId)
+                    .ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // Remove HR entries
+                _hrDb.TimeCards.RemoveRange(await _hrDb.TimeCards.Where(tc => tc.TenantId == testTenantId).ToListAsync(cancellationToken));
+                _hrDb.Payslips.RemoveRange(await _hrDb.Payslips.Where(s => s.TenantId == testTenantId).ToListAsync(cancellationToken));
+                _hrDb.PayrollPeriods.RemoveRange(await _hrDb.PayrollPeriods.Where(p => p.TenantId == testTenantId).ToListAsync(cancellationToken));
+                _hrDb.Employees.RemoveRange(await _hrDb.Employees.Where(e => e.TenantId == testTenantId).ToListAsync(cancellationToken));
+                await _hrDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 9 Employee Payroll lifecycle and Wage Expense ledger accruals E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "New Employee created with $25.00/hr contract rate.",
+                        "Employee Time Cards clocked (4 days * 10 hours = 40 hours) and approved.",
+                        "Payroll Processed: Gross: $1,000.00, Tax withholding (15%): $150.00, Net Pay: $850.00 computed.",
+                        "Payroll Paid event published.",
+                        "Double-entry payroll Journal Entry posted (Debit Wages Expense 5100 by $1,000.00 / Credit Tax Liability 2200 by $150.00 / Credit Cash 1010 by $850.00).",
                         "Accrual balances verified in the Trial Balance report."
                     }
                 });

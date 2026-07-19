@@ -39,6 +39,9 @@
     <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Application\AgriERP.Modules.Telemetry.Application.csproj" />
     <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Infrastructure\AgriERP.Modules.Telemetry.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Telemetry\AgriERP.Modules.Telemetry.Presentation\AgriERP.Modules.Telemetry.Presentation.csproj" />
+    <ProjectReference Include="..\..\HR\AgriERP.Modules.HR.Application\AgriERP.Modules.HR.Application.csproj" />
+    <ProjectReference Include="..\..\HR\AgriERP.Modules.HR.Infrastructure\AgriERP.Modules.HR.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\HR\AgriERP.Modules.HR.Presentation\AgriERP.Modules.HR.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

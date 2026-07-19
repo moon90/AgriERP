@@ -27,6 +27,9 @@
       ],
       "@agri-erp-workspace/finance": [
         "./libs/features/finance/src/index.ts"
+      ],
+      "@agri-erp-workspace/hr": [
+        "./libs/features/hr/src/index.ts"
       ]
     }
   },

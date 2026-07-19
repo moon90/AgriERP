@@ -38,6 +38,12 @@
     <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Infrastructure/AgriERP.Modules.Telemetry.Infrastructure.csproj" />
     <Project Path="src/Telemetry/AgriERP.Modules.Telemetry.Presentation/AgriERP.Modules.Telemetry.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/HR/">
+    <Project Path="src/HR/AgriERP.Modules.HR.Domain/AgriERP.Modules.HR.Domain.csproj" />
+    <Project Path="src/HR/AgriERP.Modules.HR.Application/AgriERP.Modules.HR.Application.csproj" />
+    <Project Path="src/HR/AgriERP.Modules.HR.Infrastructure/AgriERP.Modules.HR.Infrastructure.csproj" />
+    <Project Path="src/HR/AgriERP.Modules.HR.Presentation/AgriERP.Modules.HR.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>
