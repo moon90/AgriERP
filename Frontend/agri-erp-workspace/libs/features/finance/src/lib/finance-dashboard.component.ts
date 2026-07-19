@@ -1,18 +1,19 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet } from './finance.service';
+import { FormsModule } from '@angular/forms';
+import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet, BudgetStatus, FiscalYearPeriod } from './finance.service';
 
 @Component({
     selector: 'lib-finance-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     template: `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 3rem;">
       <!-- Title Header -->
       <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <h3 style="color: #2c3e50; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">General Ledger & Financial Reporting</h3>
-          <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Review real-time double-entry trial balance, income statement, and balance sheet equations.</p>
+          <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Review trial balances, post budgets, run year-end fiscal closes, and trace double-entry journal flows.</p>
         </div>
         <button (click)="refreshReports()" style="padding: 8px 16px; background: #34495e; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
           🔄 Refresh Reports
@@ -20,7 +21,7 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet } from 
       </div>
 
       <!-- Tab Buttons Navigation -->
-      <div style="display: flex; gap: 1rem; border-bottom: 2px solid #eef2f5; padding-bottom: 0.75rem; margin-bottom: 2rem;">
+      <div style="display: flex; gap: 1rem; border-bottom: 2px solid #eef2f5; padding-bottom: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap;">
         <button (click)="activeTab = 'trial-balance'" [ngStyle]="{
           'padding': '10px 20px',
           'background': 'none',
@@ -64,6 +65,36 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet } from 
           'transition': 'all 0.2s'
         }">
           Balance Sheet
+        </button>
+
+        <button (click)="activeTab = 'budgets'" [ngStyle]="{
+          'padding': '10px 20px',
+          'background': 'none',
+          'border': 'none',
+          'color': activeTab === 'budgets' ? '#f39c12' : '#7f8c8d',
+          'font-weight': '700',
+          'font-size': '1rem',
+          'cursor': 'pointer',
+          'border-bottom': activeTab === 'budgets' ? '3px solid #f39c12' : 'none',
+          'margin-bottom': '-14px',
+          'transition': 'all 0.2s'
+        }">
+          💰 Budgets
+        </button>
+
+        <button (click)="activeTab = 'fiscal-closing'" [ngStyle]="{
+          'padding': '10px 20px',
+          'background': 'none',
+          'border': 'none',
+          'color': activeTab === 'fiscal-closing' ? '#1abc9c' : '#7f8c8d',
+          'font-weight': '700',
+          'font-size': '1rem',
+          'cursor': 'pointer',
+          'border-bottom': activeTab === 'fiscal-closing' ? '3px solid #1abc9c' : 'none',
+          'margin-bottom': '-14px',
+          'transition': 'all 0.2s'
+        }">
+          ⚖️ Fiscal Closings
         </button>
       </div>
 
@@ -266,6 +297,169 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet } from 
           </div>
         </div>
 
+        <!-- Tab 4: Budgets Alert Dashboard -->
+        <div *ngIf="activeTab === 'budgets'">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span style="font-weight: bold; color: #34495e;">Select Fiscal Year:</span>
+              <input type="number" [(ngModel)]="budgetYear" (change)="loadBudgets()" style="width: 100px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; text-align: center;" />
+            </div>
+            <button (click)="showBudgetForm = !showBudgetForm" style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+              {{ showBudgetForm ? 'Close Set Allocation' : '➕ Allocate Budget' }}
+            </button>
+          </div>
+
+          <!-- Allocate Budget Form -->
+          <div *ngIf="showBudgetForm" style="background: #fffcf4; border: 1px solid #f9ebea; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 5px solid #f39c12;">
+            <h4 style="margin: 0 0 1rem 0; color: #d35400;">Allocate Budget Limit</h4>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">GL Account Code</label>
+                <select [(ngModel)]="newBudget.accountCode" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; min-width: 250px;">
+                  <option value="">-- Choose Account --</option>
+                  <option *ngFor="let acc of trialLines" [value]="acc.accountCode">
+                    {{ acc.accountCode }} - {{ acc.accountName }} ({{ acc.accountType }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Fiscal Year</label>
+                <input type="number" [(ngModel)]="newBudget.year" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100px;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Allocated Amount ($)</label>
+                <input type="number" [(ngModel)]="newBudget.allocatedAmount" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 180px;" />
+              </div>
+              <button (click)="submitBudget()" style="padding: 9px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                Save Budget Allocation
+              </button>
+            </div>
+          </div>
+
+          <!-- Budgets Table -->
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid #eef2f5; color: #34495e; font-size: 0.9rem; font-weight: 700; text-transform: uppercase;">
+                <th style="padding: 1rem 0.5rem;">GL Account</th>
+                <th style="padding: 1rem 0.5rem; text-align: right;">Allocated Budget</th>
+                <th style="padding: 1rem 0.5rem; text-align: right;">Actual Spent</th>
+                <th style="padding: 1rem 0.5rem; text-align: right;">Remaining</th>
+                <th style="padding: 1rem 0.5rem; width: 250px;">Consumption Progress</th>
+                <th style="padding: 1rem 0.5rem; text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of budgets" style="border-bottom: 1px solid #f8f9fa; font-size: 0.95rem; color: #2c3e50;">
+                <td style="padding: 1rem 0.5rem;">
+                  <strong style="color: #34495e;">{{ b.accountName }}</strong>
+                  <span style="display: block; font-size: 0.8rem; color: #7f8c8d; font-family: monospace;">Code: {{ b.accountCode }} | {{ b.accountType }}</span>
+                </td>
+                <td style="padding: 1rem 0.5rem; text-align: right; font-family: monospace; font-weight: bold;">{{ b.allocatedAmount | currency:'USD' }}</td>
+                <td style="padding: 1rem 0.5rem; text-align: right; font-family: monospace; color: #34495e;">{{ b.spentAmount | currency:'USD' }}</td>
+                <td style="padding: 1rem 0.5rem; text-align: right; font-family: monospace; font-weight: bold;" [style.color]="b.remainingAmount >= 0 ? '#27ae60' : '#e74c3c'">
+                  {{ b.remainingAmount | currency:'USD' }}
+                </td>
+                <td style="padding: 1rem 0.5rem; vertical-align: middle;">
+                  <!-- Progress Bar Wrapper -->
+                  <div style="background: #e2e8f0; border-radius: 4px; height: 10px; width: 100%; overflow: hidden; position: relative;">
+                    <div [style.width.%]="getBudgetPercent(b)" [style.background-color]="b.isOverBudget ? '#e74c3c' : '#2ecc71'" style="height: 100%; transition: width 0.3s;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: #7f8c8d; font-family: monospace;">{{ getBudgetPercent(b) | number:'1.0-0' }}% spent</span>
+                </td>
+                <td style="padding: 1rem 0.5rem; text-align: center;">
+                  <span *ngIf="b.isOverBudget" style="background-color: #e74c3c; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">
+                    ⚠️ OVER BUDGET
+                  </span>
+                  <span *ngIf="!b.isOverBudget" style="background-color: #2ecc71; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">
+                    ✅ OK
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="budgets.length === 0" style="text-align: center; color: #95a5a6;">
+                <td colspan="6" style="padding: 2rem;">No active budget allocations defined for fiscal year {{ budgetYear }}.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tab 5: Fiscal Year Closings -->
+        <div *ngIf="activeTab === 'fiscal-closing'">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+            <button (click)="showFiscalForm = !showFiscalForm" style="padding: 8px 16px; background: #1abc9c; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+              {{ showFiscalForm ? 'Close New Year Period' : '➕ Initialize Fiscal Year' }}
+            </button>
+          </div>
+
+          <!-- Initialize Fiscal Year Form -->
+          <div *ngIf="showFiscalForm" style="background: #eefdfa; border: 1px solid #a3e4d7; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 5px solid #1abc9c;">
+            <h4 style="margin: 0 0 1rem 0; color: #16a085;">Initialize Fiscal Calendar Year</h4>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Calendar Year</label>
+                <input type="number" [(ngModel)]="newYear.year" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 120px;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Start Date</label>
+                <input type="date" [(ngModel)]="newYear.startDate" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">End Date</label>
+                <input type="date" [(ngModel)]="newYear.endDate" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              </div>
+              <button (click)="submitFiscalYear()" style="padding: 9px 20px; background: #1abc9c; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                Create Fiscal Period
+              </button>
+            </div>
+          </div>
+
+          <!-- Fiscal Years Table -->
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid #eef2f5; color: #34495e; font-size: 0.9rem; font-weight: 700; text-transform: uppercase;">
+                <th style="padding: 1rem 0.5rem; text-align: center;">Fiscal Year</th>
+                <th style="padding: 1rem 0.5rem;">Period Range</th>
+                <th style="padding: 1rem 0.5rem; text-align: center;">Status</th>
+                <th style="padding: 1rem 0.5rem;">Closure Details</th>
+                <th style="padding: 1rem 0.5rem; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of fiscalYears" style="border-bottom: 1px solid #f8f9fa; font-size: 0.95rem; color: #2c3e50;">
+                <td style="padding: 1rem 0.5rem; text-align: center; font-weight: bold; font-size: 1.1rem; color: #34495e;">{{ p.year }}</td>
+                <td style="padding: 1rem 0.5rem;">{{ p.startDate | date:'mediumDate' }} - {{ p.endDate | date:'mediumDate' }}</td>
+                <td style="padding: 1rem 0.5rem; text-align: center;">
+                  <span [ngStyle]="{
+                    'background-color': p.isClosed ? '#e74c3c' : '#2ecc71',
+                    'color': 'white',
+                    'padding': '3px 8px',
+                    'border-radius': '4px',
+                    'font-size': '0.75rem',
+                    'font-weight': '600'
+                  }">
+                    {{ p.isClosed ? 'CLOSED' : 'OPEN' }}
+                  </span>
+                </td>
+                <td style="padding: 1rem 0.5rem; font-size: 0.85rem; color: #7f8c8d;">
+                  <span *ngIf="p.isClosed">
+                    Closed on: {{ p.closedAt | date:'short' }}<br>
+                    Closed by: {{ p.closedBy }}
+                  </span>
+                  <span *ngIf="!p.isClosed">Active period entries open</span>
+                </td>
+                <td style="padding: 1rem 0.5rem; text-align: center;">
+                  <button *ngIf="!p.isClosed" (click)="closeYear(p.year)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: background 0.2s;">
+                    🔒 Close Fiscal Year
+                  </button>
+                  <span *ngIf="p.isClosed" style="color: #95a5a6; font-size: 0.85rem; font-weight: 500;">Locked</span>
+                </td>
+              </tr>
+              <tr *ngIf="fiscalYears.length === 0" style="text-align: center; color: #95a5a6;">
+                <td colspan="5" style="padding: 2rem;">No active fiscal year periods configured in ledger database.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   `
@@ -274,14 +468,35 @@ export class FinanceDashboardComponent implements OnInit {
     private financeService = inject(FinanceService);
     private cdr = inject(ChangeDetectorRef);
 
-    activeTab: 'trial-balance' | 'income-statement' | 'balance-sheet' = 'trial-balance';
+    activeTab: 'trial-balance' | 'income-statement' | 'balance-sheet' | 'budgets' | 'fiscal-closing' = 'trial-balance';
 
     trialLines: TrialBalanceLine[] = [];
     incomeStatement?: IncomeStatement;
     balanceSheet?: BalanceSheet;
 
+    // Budgeting states
+    budgets: BudgetStatus[] = [];
+    budgetYear = 2026;
+    showBudgetForm = false;
+    newBudget = {
+        accountCode: '',
+        year: 2026,
+        allocatedAmount: 1000
+    };
+
+    // Fiscal years states
+    fiscalYears: FiscalYearPeriod[] = [];
+    showFiscalForm = false;
+    newYear = {
+        year: 2026,
+        startDate: '',
+        endDate: ''
+    };
+
     ngOnInit(): void {
         this.refreshReports();
+        this.loadBudgets();
+        this.loadFiscalYears();
     }
 
     refreshReports(): void {
@@ -308,6 +523,90 @@ export class FinanceDashboardComponent implements OnInit {
             },
             error: (err) => console.error('Error fetching balance sheet:', err)
         });
+    }
+
+    loadBudgets(): void {
+        this.financeService.getBudgets(this.budgetYear).subscribe({
+            next: (data) => {
+                this.budgets = data;
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error loading budgets:', err)
+        });
+    }
+
+    loadFiscalYears(): void {
+        this.financeService.getFiscalYears().subscribe({
+            next: (data) => {
+                this.fiscalYears = data;
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error loading fiscal years:', err)
+        });
+    }
+
+    submitBudget(): void {
+        if (!this.newBudget.accountCode) {
+            alert('Please select an account.');
+            return;
+        }
+
+        const command = {
+            accountCode: this.newBudget.accountCode,
+            fiscalYear: this.newBudget.year,
+            allocatedAmount: this.newBudget.allocatedAmount
+        };
+
+        this.financeService.setBudget(command).subscribe({
+            next: () => {
+                this.showBudgetForm = false;
+                this.loadBudgets();
+            },
+            error: (err) => alert('Failed to set budget: ' + (err.error?.error || err.message))
+        });
+    }
+
+    submitFiscalYear(): void {
+        if (!this.newYear.year || !this.newYear.startDate || !this.newYear.endDate) {
+            alert('Please fill out all required fields.');
+            return;
+        }
+
+        const command = {
+            year: this.newYear.year,
+            startDate: this.newYear.startDate,
+            endDate: this.newYear.endDate
+        };
+
+        this.financeService.createFiscalYear(command).subscribe({
+            next: () => {
+                this.showFiscalForm = false;
+                this.loadFiscalYears();
+            },
+            error: (err) => alert('Failed to create fiscal year: ' + (err.error?.error || err.message))
+        });
+    }
+
+    closeYear(year: number): void {
+        if (!confirm(`Are you absolutely sure you want to close Fiscal Year ${year}? All temporary accounts (Revenues & Expenses) will be reset to zero, net profits will post to Retained Earnings (3900), and all future journal entry postings in this range will be locked.`)) {
+            return;
+        }
+
+        const command = { year };
+        this.financeService.closeFiscalYear(command).subscribe({
+            next: () => {
+                this.loadFiscalYears();
+                this.refreshReports();
+                alert(`Fiscal Year ${year} has been locked and closed out successfully.`);
+            },
+            error: (err) => alert('Failed to close fiscal year: ' + (err.error?.error || err.message))
+        });
+    }
+
+    getBudgetPercent(b: BudgetStatus): number {
+        if (b.allocatedAmount <= 0) return 0;
+        const pct = (b.spentAmount / b.allocatedAmount) * 100;
+        return pct > 100 ? 100 : pct;
     }
 
     getSumDebits(): number {

@@ -17,10 +17,15 @@ using AgriERP.Modules.Telemetry.Application.Devices.Commands.IngestTelemetry;
 using AgriERP.Modules.Telemetry.Application.Geofences.Commands.LogAnimalLocation;
 using AgriERP.Modules.Telemetry.Domain;
 using AgriERP.Modules.Telemetry.Infrastructure.Persistence;
+using AgriERP.Modules.Finance.Domain;
 using AgriERP.Modules.Finance.Infrastructure.Persistence;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetTrialBalance;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetIncomeStatement;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetBalanceSheet;
+using AgriERP.Modules.Finance.Application.Budgets.Commands.SetBudget;
+using AgriERP.Modules.Finance.Application.Budgets.Queries.GetBudgetStatus;
+using AgriERP.Modules.Finance.Application.FiscalYears.Commands.CreateFiscalYear;
+using AgriERP.Modules.Finance.Application.FiscalYears.Commands.CloseFiscalYear;
 using AgriERP.Modules.HR.Infrastructure.Persistence;
 using AgriERP.Modules.HR.Application.Employees.Commands.CreateEmployee;
 using AgriERP.Modules.HR.Application.TimeCards.Commands.LogTimeCard;
@@ -1001,6 +1006,197 @@ namespace AgriERP.Api.Controllers
                         "Payroll Paid event published.",
                         "Double-entry payroll Journal Entry posted (Debit Wages Expense 5100 by $1,000.00 / Credit Tax Liability 2200 by $150.00 / Credit Cash 1010 by $850.00).",
                         "Accrual balances verified in the Trial Balance report."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-budgeting-verification")]
+        public async Task<IActionResult> RunBudgetingVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Seed accounts
+                var wagesAcc = new GeneralLedgerAccount(testTenantId, "5100", "Wages Expense", "Expense");
+                var revenueAcc = new GeneralLedgerAccount(testTenantId, "4100", "Sales Revenue", "Revenue");
+                var retainedAcc = new GeneralLedgerAccount(testTenantId, "3900", "Retained Earnings", "Equity");
+                var cashAcc = new GeneralLedgerAccount(testTenantId, "1010", "Cash & Bank", "Asset");
+
+                await _financeDb.GeneralLedgerAccounts.AddAsync(wagesAcc, cancellationToken);
+                await _financeDb.GeneralLedgerAccounts.AddAsync(revenueAcc, cancellationToken);
+                await _financeDb.GeneralLedgerAccounts.AddAsync(retainedAcc, cancellationToken);
+                await _financeDb.GeneralLedgerAccounts.AddAsync(cashAcc, cancellationToken);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // 2. Set Budget ($2,000.00 allocated for Wages in 2026)
+                var setBudgetCmd = new SetBudgetCommand("5100", 2026, 2000.00m);
+                await _sender.Send(setBudgetCmd, cancellationToken);
+
+                // Check 1: Initial budget status
+                var getBudgetStatusQuery = new GetBudgetStatusQuery(2026);
+                var initialStatus = await _sender.Send(getBudgetStatusQuery, cancellationToken);
+                var wagesBudget = initialStatus.FirstOrDefault(b => b.AccountCode == "5100");
+
+                if (wagesBudget == null || wagesBudget.AllocatedAmount != 2000.00m || wagesBudget.SpentAmount != 0.00m || wagesBudget.IsOverBudget)
+                {
+                    return BadRequest(new { Success = false, Error = $"Initial budget setup failed. Allocated: {wagesBudget?.AllocatedAmount}, Spent: {wagesBudget?.SpentAmount}" });
+                }
+
+                // 3. Post a journal entry inside budget limits: $1,500.00 wages expense (debit) and cash (credit)
+                var entry1 = new JournalEntry(testTenantId, new DateTime(2026, 3, 15), "Monthly Salaries Payment 1");
+                entry1.AddLine(wagesAcc.Id, 1500.00m, 0);
+                entry1.AddLine(cashAcc.Id, 0, 1500.00m);
+                entry1.Post();
+                await _financeDb.JournalEntries.AddAsync(entry1, cancellationToken);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // Check 2: Spent is updated, still within budget limits
+                var statusAfter = await _sender.Send(getBudgetStatusQuery, cancellationToken);
+                var wagesBudgetAfter = statusAfter.FirstOrDefault(b => b.AccountCode == "5100");
+
+                if (wagesBudgetAfter == null || wagesBudgetAfter.SpentAmount != 1500.00m || wagesBudgetAfter.IsOverBudget)
+                {
+                    return BadRequest(new { Success = false, Error = $"Budget spent update failed. Expected: 1500, Actual: {wagesBudgetAfter?.SpentAmount}" });
+                }
+
+                // 4. Post another entry to go over budget limit: additional $600.00 wages expense (debit)
+                var entry2 = new JournalEntry(testTenantId, new DateTime(2026, 4, 15), "Salaries Bonus Payment");
+                entry2.AddLine(wagesAcc.Id, 600.00m, 0);
+                entry2.AddLine(cashAcc.Id, 0, 600.00m);
+                entry2.Post();
+                await _financeDb.JournalEntries.AddAsync(entry2, cancellationToken);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // Check 3: Overbudget status triggers correctly
+                var statusOver = await _sender.Send(getBudgetStatusQuery, cancellationToken);
+                var wagesBudgetOver = statusOver.FirstOrDefault(b => b.AccountCode == "5100");
+
+                if (wagesBudgetOver == null || wagesBudgetOver.SpentAmount != 2100.00m || !wagesBudgetOver.IsOverBudget || wagesBudgetOver.RemainingAmount != -100.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Budget limit alert did not trigger. Spent: {wagesBudgetOver?.SpentAmount}, IsOverBudget: {wagesBudgetOver?.IsOverBudget}" });
+                }
+
+                // 5. Seed a revenue posting to test net income calculations: $3,000.00 Revenue (credit) and Cash (debit)
+                var entryRev = new JournalEntry(testTenantId, new DateTime(2026, 6, 20), "Farm Crop Sales Inflow");
+                entryRev.AddLine(cashAcc.Id, 3000.00m, 0);
+                entryRev.AddLine(revenueAcc.Id, 0, 3000.00m);
+                entryRev.Post();
+                await _financeDb.JournalEntries.AddAsync(entryRev, cancellationToken);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // 6. Create the Fiscal Year Period
+                var createPeriodCmd = new CreateFiscalYearCommand(2026, new DateTime(2026, 1, 1), new DateTime(2026, 12, 31));
+                await _sender.Send(createPeriodCmd, cancellationToken);
+
+                // 7. Execute Fiscal Year Close
+                // Revenues ($3000) - Expenses ($2100) = $900 Net Profit.
+                // Closing journal must debit Revenue by $3000, credit Expense by $2100, credit Retained Earnings (3900) by $900.
+                var closePeriodCmd = new CloseFiscalYearCommand(2026);
+                await _sender.Send(closePeriodCmd, cancellationToken);
+
+                // Check 4: Verify period is closed
+                var period = await _financeDb.FiscalYearPeriods.FirstOrDefaultAsync(p => p.Year == 2026 && p.TenantId == testTenantId, cancellationToken);
+                if (period == null || !period.IsClosed)
+                {
+                    return BadRequest(new { Success = false, Error = "Fiscal Year closing execution failed to update status to closed." });
+                }
+
+                // Check 5: Verify retained earnings balance is updated
+                var trialBalanceQuery = new GetTrialBalanceQuery();
+                var trialBalances = await _sender.Send(trialBalanceQuery, cancellationToken);
+
+                var retainedTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "3900");
+                if (retainedTrial == null || retainedTrial.TotalCredits != 900.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Fiscal year close ledger posting failed to Retained Earnings (3900). TotalCredits: {retainedTrial?.TotalCredits}" });
+                }
+
+                var revenueTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "4100");
+                if (revenueTrial == null || revenueTrial.NetBalance != 0.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Revenue account (4100) closing balance is not zero. NetBalance: {revenueTrial?.NetBalance}" });
+                }
+
+                var wagesTrial = trialBalances.FirstOrDefault(tb => tb.AccountCode == "5100");
+                if (wagesTrial == null || wagesTrial.NetBalance != 0.00m)
+                {
+                    return BadRequest(new { Success = false, Error = $"Expense account (5100) closing balance is not zero. NetBalance: {wagesTrial?.NetBalance}" });
+                }
+
+                // Check 6: Verify posting new entries to the closed period is blocked
+                var blockedEntry = new JournalEntry(testTenantId, new DateTime(2026, 8, 15), "Post-close transaction");
+                blockedEntry.AddLine(wagesAcc.Id, 100.00m, 0);
+                blockedEntry.AddLine(cashAcc.Id, 0, 100.00m);
+                blockedEntry.Post();
+                await _financeDb.JournalEntries.AddAsync(blockedEntry, cancellationToken);
+
+                bool wasBlocked = false;
+                try
+                {
+                    await _financeDb.SaveChangesAsync(cancellationToken);
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("closed fiscal year period"))
+                {
+                    wasBlocked = true;
+                }
+
+                if (!wasBlocked)
+                {
+                    return BadRequest(new { Success = false, Error = "Security blockade failed: Allowed posting transaction to a closed fiscal year period." });
+                }
+
+                // Detach blocked entry to allow database cleanup without throwing
+                _financeDb.Entry(blockedEntry).State = EntityState.Detached;
+
+                // 8. Clean up database records
+                // Remove closed period closing entries
+                var closingEntry = await _financeDb.JournalEntries
+                    .Include(je => je.Lines)
+                    .FirstOrDefaultAsync(je => je.TenantId == testTenantId && je.Description.Contains("Closing Entry for Fiscal Year"), cancellationToken);
+                if (closingEntry != null)
+                {
+                    _financeDb.TransactionLines.RemoveRange(closingEntry.Lines);
+                    _financeDb.JournalEntries.Remove(closingEntry);
+                }
+
+                _financeDb.TransactionLines.RemoveRange(entry1.Lines);
+                _financeDb.JournalEntries.Remove(entry1);
+                _financeDb.TransactionLines.RemoveRange(entry2.Lines);
+                _financeDb.JournalEntries.Remove(entry2);
+                _financeDb.TransactionLines.RemoveRange(entryRev.Lines);
+                _financeDb.JournalEntries.Remove(entryRev);
+
+                var budgetsList = await _financeDb.Budgets.Where(b => b.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.Budgets.RemoveRange(budgetsList);
+
+                var periodsList = await _financeDb.FiscalYearPeriods.Where(p => p.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.FiscalYearPeriods.RemoveRange(periodsList);
+
+                var accountsList = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accountsList);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 10 Budgeting & Fiscal Year Management E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Wages Expense Budget initialized with $2,000.00.",
+                        "Log transaction postings under the budget. Spent values verified.",
+                        "Threshold alerts verified: Over-budget limit warnings trigger correctly.",
+                        "Fiscal Year period created and net profit calculated.",
+                        "Year-end close balances transferred to Retained Earnings (3900) successfully.",
+                        "Revenue and Expense balances correctly wiped to zero for closing.",
+                        "Closed Period Security: Post-closure retrospective entries blocked automatically."
                     }
                 });
             }

@@ -10,6 +10,8 @@ namespace AgriERP.Modules.Finance.Application.Common
         DbSet<GeneralLedgerAccount> GeneralLedgerAccounts { get; }
         DbSet<JournalEntry> JournalEntries { get; }
         DbSet<TransactionLine> TransactionLines { get; }
+        DbSet<Budget> Budgets { get; }
+        DbSet<FiscalYearPeriod> FiscalYearPeriods { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

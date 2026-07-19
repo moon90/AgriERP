@@ -43,6 +43,27 @@ export interface BalanceSheet {
     totalLiabilitiesAndEquity: number;
 }
 
+export interface BudgetStatus {
+    budgetId: string;
+    accountCode: string;
+    accountName: string;
+    accountType: string;
+    allocatedAmount: number;
+    spentAmount: number;
+    remainingAmount: number;
+    isOverBudget: boolean;
+}
+
+export interface FiscalYearPeriod {
+    id: string;
+    year: number;
+    startDate: string;
+    endDate: string;
+    isClosed: boolean;
+    closedAt?: string;
+    closedBy?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FinanceService {
     private http = inject(HttpClient);
@@ -58,5 +79,25 @@ export class FinanceService {
 
     getBalanceSheet(): Observable<BalanceSheet> {
         return this.http.get<BalanceSheet>(`${this.apiUrl}/balance-sheet`);
+    }
+
+    getBudgets(year: number): Observable<BudgetStatus[]> {
+        return this.http.get<BudgetStatus[]>(`${this.apiUrl}/budgets/${year}`);
+    }
+
+    setBudget(command: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/budgets`, command);
+    }
+
+    getFiscalYears(): Observable<FiscalYearPeriod[]> {
+        return this.http.get<FiscalYearPeriod[]>(`${this.apiUrl}/fiscal-years`);
+    }
+
+    createFiscalYear(command: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/fiscal-years`, command);
+    }
+
+    closeFiscalYear(command: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/fiscal-years/close`, command);
     }
 }
