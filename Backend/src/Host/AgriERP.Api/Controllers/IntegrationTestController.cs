@@ -26,6 +26,12 @@ using AgriERP.Modules.Finance.Application.Budgets.Commands.SetBudget;
 using AgriERP.Modules.Finance.Application.Budgets.Queries.GetBudgetStatus;
 using AgriERP.Modules.Finance.Application.FiscalYears.Commands.CreateFiscalYear;
 using AgriERP.Modules.Finance.Application.FiscalYears.Commands.CloseFiscalYear;
+using AgriERP.Modules.Assets.Infrastructure.Persistence;
+using AgriERP.Modules.Assets.Application.Assets.Commands.CreateAsset;
+using AgriERP.Modules.Assets.Application.Assets.Commands.LogMaintenance;
+using AgriERP.Modules.Assets.Application.Assets.Commands.CalculateDepreciation;
+using AgriERP.Modules.Assets.Application.Assets.Queries.GetDepreciationSchedule;
+using AgriERP.Modules.Assets.Domain;
 using AgriERP.Modules.HR.Infrastructure.Persistence;
 using AgriERP.Modules.HR.Application.Employees.Commands.CreateEmployee;
 using AgriERP.Modules.HR.Application.TimeCards.Commands.LogTimeCard;
@@ -58,6 +64,7 @@ namespace AgriERP.Api.Controllers
         private readonly TelemetryDbContext _telemetryDb;
         private readonly FinanceDbContext _financeDb;
         private readonly HrDbContext _hrDb;
+        private readonly AssetsDbContext _assetsDb;
         private readonly ITenantProvider _tenantProvider;
 
         public IntegrationTestController(
@@ -68,6 +75,7 @@ namespace AgriERP.Api.Controllers
             TelemetryDbContext telemetryDb,
             FinanceDbContext financeDb,
             HrDbContext hrDb,
+            AssetsDbContext assetsDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -77,6 +85,7 @@ namespace AgriERP.Api.Controllers
             _telemetryDb = telemetryDb;
             _financeDb = financeDb;
             _hrDb = hrDb;
+            _assetsDb = assetsDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -1197,6 +1206,166 @@ namespace AgriERP.Api.Controllers
                         "Year-end close balances transferred to Retained Earnings (3900) successfully.",
                         "Revenue and Expense balances correctly wiped to zero for closing.",
                         "Closed Period Security: Post-closure retrospective entries blocked automatically."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-assets-verification")]
+        public async Task<IActionResult> RunAssetsVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Register a test Asset ($12,000.00 purchase price, 120 months useful life, i.e., $100.00/month depreciation)
+                var createAssetCmd = new CreateAssetCommand(
+                    Name: "Test Tractor JD-500",
+                    AssetNumber: "TEST-EQ-01",
+                    Category: "Tractor",
+                    PurchaseDate: DateTime.UtcNow.AddMonths(-2),
+                    PurchasePrice: 12000.00m,
+                    UsefulLifeMonths: 120
+                );
+                var assetId = await _sender.Send(createAssetCmd, cancellationToken);
+
+                // Check 1: Verify Asset details in database
+                var asset = await _assetsDb.Assets.FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
+                if (asset == null || asset.Name != "Test Tractor JD-500" || asset.PurchasePrice != 12000.00m || asset.UsefulLifeMonths != 120 || asset.RemainingLifeMonths != 120)
+                {
+                    throw new Exception("Asset registration details are incorrect or missing in database.");
+                }
+
+                // 2. Perform monthly depreciation calculation for this month
+                var runDepCmd = new CalculateDepreciationCommand(DateTime.UtcNow);
+                var totalDep = await _sender.Send(runDepCmd, cancellationToken);
+
+                if (totalDep != 100.00m)
+                {
+                    throw new Exception($"Expected depreciation calculated to be $100.00, but got: ${totalDep}");
+                }
+
+                // Check 2: Verify GL entries in Finance Db (Depreciation Expense (5500) Debited, Accumulated Depreciation (1250) Credited)
+                var depExpenseAcc = await _financeDb.GeneralLedgerAccounts.FirstOrDefaultAsync(a => a.AccountCode == "5500" && a.TenantId == testTenantId, cancellationToken);
+                var accumDepAcc = await _financeDb.GeneralLedgerAccounts.FirstOrDefaultAsync(a => a.AccountCode == "1250" && a.TenantId == testTenantId, cancellationToken);
+
+                if (depExpenseAcc == null || accumDepAcc == null)
+                {
+                    throw new Exception("General Ledger Accounts (5500 or 1250) were not seeded or created during depreciation post.");
+                }
+
+                var depLine = await (from tl in _financeDb.TransactionLines
+                                     join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                     where tl.AccountId == depExpenseAcc.Id && je.TenantId == testTenantId
+                                     select tl).FirstOrDefaultAsync(cancellationToken);
+
+                var accumDepLine = await (from tl in _financeDb.TransactionLines
+                                          join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                          where tl.AccountId == accumDepAcc.Id && je.TenantId == testTenantId
+                                          select tl).FirstOrDefaultAsync(cancellationToken);
+
+                if (depLine == null || depLine.DebitAmount != 100.00m || accumDepLine == null || accumDepLine.CreditAmount != 100.00m)
+                {
+                    throw new Exception("Double-entry depreciation journal posting to general ledger was not recorded correctly.");
+                }
+
+                // 3. Log maintenance event with a cost of $250.00
+                var logMaintCmd = new LogMaintenanceCommand(
+                    AssetId: assetId,
+                    ServiceType: "Oil Change & Filters",
+                    ServiceDate: DateTime.UtcNow,
+                    Cost: 250.00m,
+                    PerformedBy: "JD Dealership",
+                    Description: "Scheduled preventative engine maintenance.",
+                    RuntimeHoursAtService: 15.5m,
+                    OdometerKmAtService: 120.0m
+                );
+                var logId = await _sender.Send(logMaintCmd, cancellationToken);
+
+                // Check 3: Verify maintenance log details and updated metrics
+                var log = await _assetsDb.MaintenanceLogs.FirstOrDefaultAsync(l => l.Id == logId, cancellationToken);
+                var updatedAsset = await _assetsDb.Assets.FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
+
+                if (log == null || log.Cost != 250.00m || log.RuntimeHoursAtService != 15.5m || log.OdometerKmAtService != 120.0m)
+                {
+                    throw new Exception("Asset maintenance logs are incorrect or missing in database.");
+                }
+
+                if (updatedAsset == null || updatedAsset.CurrentRuntimeHours != 15.5m || updatedAsset.CurrentOdometerKm != 120.0m)
+                {
+                    throw new Exception("Asset odometer or runtime counters were not accumulated and updated from maintenance logs.");
+                }
+
+                // Check 4: Verify maintenance ledger posting (Maintenance Expense (5600) Debited, Cash (1010) Credited)
+                var maintExpenseAcc = await _financeDb.GeneralLedgerAccounts.FirstOrDefaultAsync(a => a.AccountCode == "5600" && a.TenantId == testTenantId, cancellationToken);
+                var cashAcc = await _financeDb.GeneralLedgerAccounts.FirstOrDefaultAsync(a => a.AccountCode == "1010" && a.TenantId == testTenantId, cancellationToken);
+
+                if (maintExpenseAcc == null || cashAcc == null)
+                {
+                    throw new Exception("GL Accounts (5600 or 1010) were not seeded or created during maintenance log post.");
+                }
+
+                var maintLine = await (from tl in _financeDb.TransactionLines
+                                       join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                       where tl.AccountId == maintExpenseAcc.Id && je.TenantId == testTenantId
+                                       select tl).FirstOrDefaultAsync(cancellationToken);
+
+                var cashLine = await (from tl in _financeDb.TransactionLines
+                                      join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                      where tl.AccountId == cashAcc.Id && je.TenantId == testTenantId
+                                      select tl).FirstOrDefaultAsync(cancellationToken);
+
+                if (maintLine == null || maintLine.DebitAmount != 250.00m || cashLine == null || cashLine.CreditAmount != 250.00m)
+                {
+                    throw new Exception("Double-entry maintenance posting to general ledger was not recorded correctly.");
+                }
+
+                // Check 5: Verify Depreciation Schedule projection calculation
+                var querySchedule = new GetDepreciationScheduleQuery(assetId);
+                var schedule = await _sender.Send(querySchedule, cancellationToken);
+
+                if (schedule == null || schedule.Count != 120 || schedule[0].MonthlyDepreciation != 100.00m || schedule[119].RemainingBookValue != 0.00m)
+                {
+                    throw new Exception("Straight-line depreciation schedule projections failed validation.");
+                }
+
+                // 4. Perform database cleanups
+                _assetsDb.MaintenanceLogs.Remove(log);
+                _assetsDb.Assets.Remove(asset);
+                await _assetsDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 11 Asset, Fleet & Equipment Maintenance E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Asset registration with straight-line configurations validated.",
+                        "Monthly straight-line depreciation calculation run completed.",
+                        "Dynamic depreciation event postings (Debit 5500 / Credit 1250) logged to GL.",
+                        "Maintenance repairs log logged with service metrics and expenses.",
+                        "Dynamic maintenance event postings (Debit 5600 / Credit 1010) logged to GL.",
+                        "Updated odometer and run hours on asset model from maintenance log.",
+                        "Straight-line asset depreciation schedule projections verified."
                     }
                 });
             }

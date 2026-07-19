@@ -44,6 +44,12 @@
     <Project Path="src/HR/AgriERP.Modules.HR.Infrastructure/AgriERP.Modules.HR.Infrastructure.csproj" />
     <Project Path="src/HR/AgriERP.Modules.HR.Presentation/AgriERP.Modules.HR.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Assets/">
+    <Project Path="src/Assets/AgriERP.Modules.Assets.Domain/AgriERP.Modules.Assets.Domain.csproj" />
+    <Project Path="src/Assets/AgriERP.Modules.Assets.Application/AgriERP.Modules.Assets.Application.csproj" />
+    <Project Path="src/Assets/AgriERP.Modules.Assets.Infrastructure/AgriERP.Modules.Assets.Infrastructure.csproj" />
+    <Project Path="src/Assets/AgriERP.Modules.Assets.Presentation/AgriERP.Modules.Assets.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

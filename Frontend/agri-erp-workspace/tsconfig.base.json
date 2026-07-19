@@ -30,6 +30,9 @@
       ],
       "@agri-erp-workspace/hr": [
         "./libs/features/hr/src/index.ts"
+      ],
+      "@agri-erp-workspace/assets": [
+        "./libs/features/assets/src/index.ts"
       ]
     }
   },
