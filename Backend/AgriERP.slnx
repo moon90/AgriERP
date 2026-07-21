@@ -86,6 +86,12 @@
     <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Infrastructure/AgriERP.Modules.Chemicals.Infrastructure.csproj" />
     <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Presentation/AgriERP.Modules.Chemicals.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Agronomy/">
+    <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Domain/AgriERP.Modules.Agronomy.Domain.csproj" />
+    <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Application/AgriERP.Modules.Agronomy.Application.csproj" />
+    <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Infrastructure/AgriERP.Modules.Agronomy.Infrastructure.csproj" />
+    <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Presentation/AgriERP.Modules.Agronomy.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

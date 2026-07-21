@@ -53,6 +53,10 @@ using AgriERP.Modules.Chemicals.Application;
 using AgriERP.Modules.Chemicals.Infrastructure.Persistence;
 using AgriERP.Modules.Chemicals.Application.Common;
 using AgriERP.Modules.Chemicals.Presentation.Controllers;
+using AgriERP.Modules.Agronomy.Application;
+using AgriERP.Modules.Agronomy.Infrastructure.Persistence;
+using AgriERP.Modules.Agronomy.Application.Common;
+using AgriERP.Modules.Agronomy.Presentation.Controllers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
@@ -77,6 +81,7 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(LandLeaseController).Assembly)
     .AddApplicationPart(typeof(IrrigationController).Assembly)
     .AddApplicationPart(typeof(ChemicalsController).Assembly)
+    .AddApplicationPart(typeof(AgronomyController).Assembly)
     .AddApplicationPart(typeof(Program).Assembly);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -106,6 +111,7 @@ builder.Services.AddTradingApplication();
 builder.Services.AddLandApplication();
 builder.Services.AddIrrigationApplication();
 builder.Services.AddChemicalsApplication();
+builder.Services.AddAgronomyApplication();
 
 // 6. DB Context setup for SQL Server
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -123,6 +129,7 @@ builder.Services.AddDbContext<TradingDbContext>(options => options.UseSqlServer(
 builder.Services.AddDbContext<LandDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<IrrigationDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<ChemicalsDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<AgronomyDbContext>(options => options.UseSqlServer(connectionString));
 
 // Map db context interfaces
 builder.Services.AddScoped<IAuthDbContext>(provider => provider.GetRequiredService<AuthDbContext>());
@@ -137,6 +144,7 @@ builder.Services.AddScoped<ITradingDbContext>(provider => provider.GetRequiredSe
 builder.Services.AddScoped<ILandDbContext>(provider => provider.GetRequiredService<LandDbContext>());
 builder.Services.AddScoped<IIrrigationDbContext>(provider => provider.GetRequiredService<IrrigationDbContext>());
 builder.Services.AddScoped<IChemicalsDbContext>(provider => provider.GetRequiredService<ChemicalsDbContext>());
+builder.Services.AddScoped<IAgronomyDbContext>(provider => provider.GetRequiredService<AgronomyDbContext>());
 
 // Register test event handler for integration verification
 builder.Services.AddScoped<INotificationHandler<AgriERP.BuildingBlocks.Application.Events.StockValueConsumedIntegrationEvent>, AgriERP.Api.Controllers.TestStockValueConsumedIntegrationEventHandler>();
@@ -223,6 +231,7 @@ using (var scope = app.Services.CreateScope())
         var landDb = services.GetRequiredService<LandDbContext>();
         var irrigationDb = services.GetRequiredService<IrrigationDbContext>();
         var chemicalsDb = services.GetRequiredService<ChemicalsDbContext>();
+        var agronomyDb = services.GetRequiredService<AgronomyDbContext>();
 
         await authDb.Database.MigrateAsync();
         await inventoryDb.Database.MigrateAsync();
@@ -235,6 +244,7 @@ using (var scope = app.Services.CreateScope())
         await landDb.Database.MigrateAsync();
         await irrigationDb.Database.MigrateAsync();
         await chemicalsDb.Database.MigrateAsync();
+        await agronomyDb.Database.MigrateAsync();
 
         // 2. Seeder call
         var authSeeder = services.GetRequiredService<IAuthDbSeeder>();

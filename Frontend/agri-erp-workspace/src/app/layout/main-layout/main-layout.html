@@ -93,6 +93,12 @@
                 <span class="icon">🧪</span> Chemicals & Safety
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/agronomy" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🌾</span> Agronomy & Soil
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

@@ -73,6 +73,11 @@ using AgriERP.Modules.Chemicals.Application.Chemicals.Commands.CreateChemicalPro
 using AgriERP.Modules.Chemicals.Application.Chemicals.Commands.LogChemicalApplication;
 using AgriERP.Modules.Chemicals.Application.Chemicals.Queries.GetChemicalAnalytics;
 using AgriERP.Modules.Chemicals.Domain;
+using AgriERP.Modules.Agronomy.Infrastructure.Persistence;
+using AgriERP.Modules.Agronomy.Application.Agronomy.Commands.RecordSoilSample;
+using AgriERP.Modules.Agronomy.Application.Agronomy.Commands.AddAgronomyRecommendation;
+using AgriERP.Modules.Agronomy.Application.Agronomy.Queries.GetSoilInsights;
+using AgriERP.Modules.Agronomy.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -106,6 +111,7 @@ namespace AgriERP.Api.Controllers
         private readonly LandDbContext _landDb;
         private readonly IrrigationDbContext _irrigationDb;
         private readonly ChemicalsDbContext _chemicalsDb;
+        private readonly AgronomyDbContext _agronomyDb;
         private readonly ITenantProvider _tenantProvider;
   
         public IntegrationTestController(
@@ -123,6 +129,7 @@ namespace AgriERP.Api.Controllers
             LandDbContext landDb,
             IrrigationDbContext irrigationDb,
             ChemicalsDbContext chemicalsDb,
+            AgronomyDbContext agronomyDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -139,6 +146,7 @@ namespace AgriERP.Api.Controllers
             _landDb = landDb;
             _irrigationDb = irrigationDb;
             _chemicalsDb = chemicalsDb;
+            _agronomyDb = agronomyDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -2271,6 +2279,129 @@ namespace AgriERP.Api.Controllers
                         "Field spraying quantity and area treated registered.",
                         "Liters stock quantities deducted from inventory balances.",
                         "General Ledger treatment liability accruals (Debit 5600 / Credit 2100) balanced."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-agronomy-verification")]
+        public async Task<IActionResult> RunAgronomyVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Record Soil Sample (pH: 6.5, NPK: 35/45/120, Organic: 3.2%, Fee: $150)
+                var recordSampleCmd = new RecordSoilSampleCommand(
+                    FieldId: Guid.NewGuid(),
+                    SampleCode: "SMP-E2E-88",
+                    SampleDate: DateTime.UtcNow,
+                    LabName: "E2E Lab Services",
+                    PhLevel: 6.50m,
+                    NitrogenPpm: 35.00m,
+                    PhosphorusPpm: 45.00m,
+                    PotassiumPpm: 120.00m,
+                    OrganicMatterPercentage: 3.20m,
+                    TestFee: 150.00m
+                );
+
+                var sampleId = await _sender.Send(recordSampleCmd, cancellationToken);
+                var sample = await _agronomyDb.SoilSamples.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == sampleId, cancellationToken);
+                if (sample == null || sample.PhLevel != 6.50m || sample.NitrogenPpm != 35.00m)
+                {
+                    throw new Exception("Soil Sample registration failed validation.");
+                }
+
+                // 2. Add Agronomy Recommendation
+                var recordRecCmd = new AddAgronomyRecommendationCommand(
+                    SoilSampleId: sampleId,
+                    RecommendedFertilizerType: "NPK 15-15-15",
+                    TargetApplicationRate: 150.00m,
+                    RecommendationDate: DateTime.UtcNow,
+                    AgronomistName: "Dr. Agronomist",
+                    Notes: "E2E Advisory"
+                );
+
+                var recId = await _sender.Send(recordRecCmd, cancellationToken);
+                var rec = await _agronomyDb.AgronomyRecommendations.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == recId, cancellationToken);
+                if (rec == null || rec.TargetApplicationRate != 150.00m)
+                {
+                    throw new Exception("Agronomy Recommendation logging failed validation.");
+                }
+
+                // Verify Lab Billing record created of $150.00
+                var billing = await _agronomyDb.LabTestingBillings.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.SoilSampleId == sampleId, cancellationToken);
+                if (billing == null || billing.TestFee != 150.00m)
+                {
+                    throw new Exception($"Lab testing fee invoice validation failed. Expected: 150.00, Got: {billing?.TestFee}");
+                }
+
+                // Verify GL postings: Laboratory Expense (5700) / Accounts Payable (2100)
+                var labExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5700" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (labExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5700 or 2100 not created during soil testing lab fee posting.");
+                }
+
+                var labTxLines = await (from tl in _financeDb.TransactionLines
+                                       join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                       where je.TenantId == testTenantId && je.Description.Contains("Laboratory")
+                                       select tl).ToListAsync(cancellationToken);
+
+                if (labTxLines.Count != 2 ||
+                    labTxLines.First(t => t.AccountId == labExpenseAcc.Id).DebitAmount != 150.00m ||
+                    labTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 150.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Soil testing lab fee failed validation.");
+                }
+
+                // 3. Query insights summary
+                var query = new GetSoilInsightsQuery();
+                var insights = await _sender.Send(query, cancellationToken);
+
+                if (insights == null || insights.TotalLabExpenses != 150.00m || insights.Samples.First().PhLevel != 6.50m)
+                {
+                    throw new Exception("Soil insights queries failed validation.");
+                }
+
+                // 4. Database Cleanup
+                _agronomyDb.SoilSamples.Remove(sample);
+                _agronomyDb.AgronomyRecommendations.Remove(rec);
+                _agronomyDb.LabTestingBillings.Remove(billing);
+                await _agronomyDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 18 Soil Test & Agronomy Insights E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Soil chemical testing samples onboarded.",
+                        "pH levels and dynamic NPK chemistry metrics captured.",
+                        "Agronomist advice fertilization target rates recorded.",
+                        "Lab testing fee statements generated.",
+                        "General Ledger diagnostic liability accruals (Debit 5700 / Credit 2100) balanced."
                     }
                 });
             }

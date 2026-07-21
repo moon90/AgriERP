@@ -63,6 +63,9 @@
     <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Application\AgriERP.Modules.Chemicals.Application.csproj" />
     <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Infrastructure\AgriERP.Modules.Chemicals.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Presentation\AgriERP.Modules.Chemicals.Presentation.csproj" />
+    <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Application\AgriERP.Modules.Agronomy.Application.csproj" />
+    <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Infrastructure\AgriERP.Modules.Agronomy.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Presentation\AgriERP.Modules.Agronomy.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

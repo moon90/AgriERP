@@ -51,6 +51,9 @@
       ],
       "@agri-erp-workspace/chemicals": [
         "./libs/features/chemicals/src/index.ts"
+      ],
+      "@agri-erp-workspace/agronomy": [
+        "./libs/features/agronomy/src/index.ts"
       ]
     }
   },
