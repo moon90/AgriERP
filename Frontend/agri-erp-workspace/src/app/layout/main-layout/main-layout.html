@@ -69,6 +69,12 @@
                 <span class="icon">🚛</span> Silo & Logistics
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/trading" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📈</span> Trading & Hedging
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

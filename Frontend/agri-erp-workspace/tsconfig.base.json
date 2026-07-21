@@ -39,6 +39,9 @@
       ],
       "@agri-erp-workspace/logistics": [
         "./libs/features/logistics/src/index.ts"
+      ],
+      "@agri-erp-workspace/trading": [
+        "./libs/features/trading/src/index.ts"
       ]
     }
   },

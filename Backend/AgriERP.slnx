@@ -62,6 +62,12 @@
     <Project Path="src/Logistics/AgriERP.Modules.Logistics.Infrastructure/AgriERP.Modules.Logistics.Infrastructure.csproj" />
     <Project Path="src/Logistics/AgriERP.Modules.Logistics.Presentation/AgriERP.Modules.Logistics.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Trading/">
+    <Project Path="src/Trading/AgriERP.Modules.Trading.Domain/AgriERP.Modules.Trading.Domain.csproj" />
+    <Project Path="src/Trading/AgriERP.Modules.Trading.Application/AgriERP.Modules.Trading.Application.csproj" />
+    <Project Path="src/Trading/AgriERP.Modules.Trading.Infrastructure/AgriERP.Modules.Trading.Infrastructure.csproj" />
+    <Project Path="src/Trading/AgriERP.Modules.Trading.Presentation/AgriERP.Modules.Trading.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

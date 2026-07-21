@@ -56,6 +56,10 @@ export const appRoutes: Route[] = [
                 loadComponent: () => import('@agri-erp-workspace/logistics').then(m => m.LogisticsComponent)
             },
             {
+                path: 'trading',
+                loadComponent: () => import('@agri-erp-workspace/trading').then(m => m.TradingComponent)
+            },
+            {
                 path: '',
                 redirectTo: 'dashboard',
                 pathMatch: 'full'

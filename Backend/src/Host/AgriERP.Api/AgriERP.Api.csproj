@@ -51,6 +51,9 @@
     <ProjectReference Include="..\..\Logistics\AgriERP.Modules.Logistics.Application\AgriERP.Modules.Logistics.Application.csproj" />
     <ProjectReference Include="..\..\Logistics\AgriERP.Modules.Logistics.Infrastructure\AgriERP.Modules.Logistics.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Logistics\AgriERP.Modules.Logistics.Presentation\AgriERP.Modules.Logistics.Presentation.csproj" />
+    <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Application\AgriERP.Modules.Trading.Application.csproj" />
+    <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Infrastructure\AgriERP.Modules.Trading.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Presentation\AgriERP.Modules.Trading.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

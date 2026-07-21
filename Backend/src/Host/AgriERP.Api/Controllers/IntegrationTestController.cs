@@ -51,6 +51,13 @@ using AgriERP.Modules.Logistics.Application.Logistics.Commands.CreateWeighbridge
 using AgriERP.Modules.Logistics.Application.Logistics.Commands.CalculateStorageCharge;
 using AgriERP.Modules.Logistics.Application.Logistics.Queries.GetStorageAnalytics;
 using AgriERP.Modules.Logistics.Domain;
+using AgriERP.Modules.Trading.Infrastructure.Persistence;
+using AgriERP.Modules.Trading.Application.Trading.Commands.CreateSalesContract;
+using AgriERP.Modules.Trading.Application.Trading.Commands.FulfillContractDelivery;
+using AgriERP.Modules.Trading.Application.Trading.Commands.OpenHedgePosition;
+using AgriERP.Modules.Trading.Application.Trading.Commands.CloseHedgePosition;
+using AgriERP.Modules.Trading.Application.Trading.Queries.GetTradingPortfolio;
+using AgriERP.Modules.Trading.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,8 +87,9 @@ namespace AgriERP.Api.Controllers
         private readonly AssetsDbContext _assetsDb;
         private readonly CropsDbContext _cropsDb;
         private readonly LogisticsDbContext _logisticsDb;
+        private readonly TradingDbContext _tradingDb;
         private readonly ITenantProvider _tenantProvider;
-
+ 
         public IntegrationTestController(
             ISender sender, 
             IPublisher publisher,
@@ -93,6 +101,7 @@ namespace AgriERP.Api.Controllers
             AssetsDbContext assetsDb,
             CropsDbContext cropsDb,
             LogisticsDbContext logisticsDb,
+            TradingDbContext tradingDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -105,6 +114,7 @@ namespace AgriERP.Api.Controllers
             _assetsDb = assetsDb;
             _cropsDb = cropsDb;
             _logisticsDb = logisticsDb;
+            _tradingDb = tradingDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -1685,6 +1695,147 @@ namespace AgriERP.Api.Controllers
                         "Storage days fees evaluated and calculated.",
                         "Elevator billing journal entries (Debit 1100 / Credit 4200) verified in GL.",
                         "Storage capacity utilization dashboards analytics queried."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-trading-verification")]
+        public async Task<IActionResult> RunTradingVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Sales Contract (50 Tons of Corn at $220/Ton)
+                var createContractCmd = new CreateSalesContractCommand("CON-E2E-001", "CUST-E2E-99", "Corn", 220.0m, 50.0m);
+                var contractId = await _sender.Send(createContractCmd, cancellationToken);
+
+                var contract = await _tradingDb.SalesContracts.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == contractId, cancellationToken);
+                if (contract == null || contract.Status != "Active" || contract.QuantityTons != 50.0m)
+                {
+                    throw new Exception("Sales contract creation failed validation.");
+                }
+
+                // 2. Open a Short Hedge Position (2 contracts of Corn Futures entered at $215/Ton)
+                var openHedgeCmd = new OpenHedgePositionCommand("CORN26", "Short", 2, 215.0m);
+                var hedgeId = await _sender.Send(openHedgeCmd, cancellationToken);
+
+                var hedge = await _tradingDb.HedgingPositions.IgnoreQueryFilters().FirstOrDefaultAsync(h => h.Id == hedgeId, cancellationToken);
+                if (hedge == null || hedge.Status != "Open" || hedge.QuantityContracts != 2)
+                {
+                    throw new Exception("Futures hedge position creation failed validation.");
+                }
+
+                // 3. Close Short Hedge Position at exit price $195/Ton: RealizedPnl = 2 * (215 - 195) * 136 = $5,440.00
+                var closeHedgeCmd = new CloseHedgePositionCommand(hedgeId, 195.0m, DateTime.UtcNow);
+                await _sender.Send(closeHedgeCmd, cancellationToken);
+
+                hedge = await _tradingDb.HedgingPositions.IgnoreQueryFilters().FirstOrDefaultAsync(h => h.Id == hedgeId, cancellationToken);
+                if (hedge == null || hedge.Status != "Closed" || hedge.RealizedPnl != 5440.00m)
+                {
+                    throw new Exception($"Futures hedge P&L calculation failed. Expected: 5440.00, Got: {hedge?.RealizedPnl}");
+                }
+
+                // Verify ledger postings for realized hedge profit: Cash (1010) Debited by $5,440.00 / Hedging Gains (4300) Credited by $5,440.00
+                var cashAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1010" && a.TenantId == testTenantId, cancellationToken);
+                var gainAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "4300" && a.TenantId == testTenantId, cancellationToken);
+
+                if (cashAcc == null || gainAcc == null)
+                {
+                    throw new Exception("GL Cash or Hedging Gain accounts not created during trade closeout.");
+                }
+
+                var hedgeTxLines = await (from tl in _financeDb.TransactionLines
+                                         join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                         where je.TenantId == testTenantId && je.Description.Contains("Hedge")
+                                         select tl).ToListAsync(cancellationToken);
+
+                if (hedgeTxLines.Count != 2 || 
+                    hedgeTxLines.First(t => t.AccountId == cashAcc.Id).DebitAmount != 5440.00m ||
+                    hedgeTxLines.First(t => t.AccountId == gainAcc.Id).CreditAmount != 5440.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for hedge realized gains failed validation.");
+                }
+
+                // 4. Fulfill Sales Contract: deliver 50 Tons of Corn physical grain
+                var deliverCmd = new FulfillContractDeliveryCommand(contractId, 50.0m, DateTime.UtcNow);
+                await _sender.Send(deliverCmd, cancellationToken);
+
+                contract = await _tradingDb.SalesContracts.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == contractId, cancellationToken);
+                if (contract == null || contract.Status != "Completed" || contract.DeliveredQuantityTons != 50.0m)
+                {
+                    throw new Exception("Sales contract delivery fulfillment validation failed.");
+                }
+
+                // Verify contract ledger revenue entry: Accounts Receivable (1100) Debited by $11,000.00 / Crop Sales Revenue (4100) Credited by $11,000.00
+                var arAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1100" && a.TenantId == testTenantId, cancellationToken);
+                var salesAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "4100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (arAcc == null || salesAcc == null)
+                {
+                    throw new Exception("GL Accounts Receivable or Crop Sales Revenue accounts not created during shipment fulfillment.");
+                }
+
+                var salesTxLines = await (from tl in _financeDb.TransactionLines
+                                         join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                         where je.TenantId == testTenantId && je.Description.Contains("Contract")
+                                         select tl).ToListAsync(cancellationToken);
+
+                if (salesTxLines.Count != 2 || 
+                    salesTxLines.First(t => t.AccountId == arAcc.Id).DebitAmount != 11000.00m ||
+                    salesTxLines.First(t => t.AccountId == salesAcc.Id).CreditAmount != 11000.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for physical crop contract revenue billing failed validation.");
+                }
+
+                // 5. Query trading portfolio metrics
+                var query = new GetTradingPortfolioQuery();
+                var portfolio = await _sender.Send(query, cancellationToken);
+
+                if (portfolio == null || portfolio.TotalRealizedPnl != 5440.00m || portfolio.SalesContracts.First().CompliancePercentage != 100.0m)
+                {
+                    throw new Exception("Trading portfolio summaries query analytics failed validation.");
+                }
+
+                // 6. Perform database cleanups
+                _tradingDb.SalesContracts.Remove(contract);
+                _tradingDb.HedgingPositions.Remove(hedge);
+                await _tradingDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 14 Crop Contract Sales & Grain Elevator Hedging/Trading E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Forward crop sales contracts registered.",
+                        "Futures short hedging positions opened at entry targets.",
+                        "Hedge positions liquidated with dynamic short-gain calculations.",
+                        "Hedge closing entries (Debit 1010 / Credit 4300) posted to GL.",
+                        "Physical delivery contracts shipments logged.",
+                        "Contract fulfillment compliance triggers validated.",
+                        "Physical delivery revenue postings (Debit 1100 / Credit 4100) matched in GL.",
+                        "Broker portfolio summary queries evaluated."
                     }
                 });
             }
