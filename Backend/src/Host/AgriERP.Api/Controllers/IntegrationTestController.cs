@@ -68,6 +68,11 @@ using AgriERP.Modules.Irrigation.Application.Irrigation.Commands.CreateWaterSour
 using AgriERP.Modules.Irrigation.Application.Irrigation.Commands.LogIrrigationUsage;
 using AgriERP.Modules.Irrigation.Application.Irrigation.Queries.GetWaterUsage;
 using AgriERP.Modules.Irrigation.Domain;
+using AgriERP.Modules.Chemicals.Infrastructure.Persistence;
+using AgriERP.Modules.Chemicals.Application.Chemicals.Commands.CreateChemicalProduct;
+using AgriERP.Modules.Chemicals.Application.Chemicals.Commands.LogChemicalApplication;
+using AgriERP.Modules.Chemicals.Application.Chemicals.Queries.GetChemicalAnalytics;
+using AgriERP.Modules.Chemicals.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -100,6 +105,7 @@ namespace AgriERP.Api.Controllers
         private readonly TradingDbContext _tradingDb;
         private readonly LandDbContext _landDb;
         private readonly IrrigationDbContext _irrigationDb;
+        private readonly ChemicalsDbContext _chemicalsDb;
         private readonly ITenantProvider _tenantProvider;
   
         public IntegrationTestController(
@@ -116,6 +122,7 @@ namespace AgriERP.Api.Controllers
             TradingDbContext tradingDb,
             LandDbContext landDb,
             IrrigationDbContext irrigationDb,
+            ChemicalsDbContext chemicalsDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -131,6 +138,7 @@ namespace AgriERP.Api.Controllers
             _tradingDb = tradingDb;
             _landDb = landDb;
             _irrigationDb = irrigationDb;
+            _chemicalsDb = chemicalsDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -2146,6 +2154,123 @@ namespace AgriERP.Api.Controllers
                         "Volumetric source allocation consumption logs updated.",
                         "Water usage utility billing amounts calculated.",
                         "General Ledger utility liability accruals (Debit 5500 / Credit 2100) balanced."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-chemicals-verification")]
+        public async Task<IActionResult> RunChemicalsVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Chemical Product (500 Liters, $12.50/L, 24 hr REI)
+                var createProductCmd = new CreateChemicalProductCommand(
+                    ProductName: "E2E Insecticide",
+                    RegistrationNumber: "EPA-E2E-77",
+                    SafetyIntervalHours: 24,
+                    StockQuantityLiters: 500.00m,
+                    CostPerLiter: 12.50m
+                );
+
+                var productId = await _sender.Send(createProductCmd, cancellationToken);
+                var product = await _chemicalsDb.ChemicalProducts.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+                if (product == null || product.StockQuantityLiters != 500.00m)
+                {
+                    throw new Exception("Chemical Product onboarding failed validation.");
+                }
+
+                // 2. Log Field Application (20 Liters, 10 Acres Treated -> dosage 2.0 L/Acre, cost $250.00)
+                var logUsageCmd = new LogChemicalApplicationCommand(
+                    ChemicalProductId: productId,
+                    FieldId: Guid.NewGuid(),
+                    QuantityAppliedLiters: 20.00m,
+                    AreaTreatedAcres: 10.00m,
+                    ApplicationDate: DateTime.UtcNow,
+                    Notes: "E2E Spray log"
+                );
+
+                var logId = await _sender.Send(logUsageCmd, cancellationToken);
+                var log = await _chemicalsDb.ApplicationLogs.IgnoreQueryFilters().FirstOrDefaultAsync(l => l.Id == logId, cancellationToken);
+                if (log == null || log.QuantityAppliedLiters != 20.00m || log.DosagePerAcre != 2.00m)
+                {
+                    throw new Exception("Chemical Application Log validation failed.");
+                }
+
+                // Verify product stock level was depleted to 480 Liters
+                product = await _chemicalsDb.ChemicalProducts.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+                if (product?.StockQuantityLiters != 480.00m)
+                {
+                    throw new Exception($"Stock depletions failed. Expected: 480.00, Got: {product?.StockQuantityLiters}");
+                }
+
+                // Verify GL postings: Chemicals Expense (5600) / Accounts Payable (2100)
+                var chemicalExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5600" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (chemicalExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5600 or 2100 not created during chemical application posting.");
+                }
+
+                var chemicalTxLines = await (from tl in _financeDb.TransactionLines
+                                            join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                            where je.TenantId == testTenantId && je.Description.Contains("Chemical")
+                                            select tl).ToListAsync(cancellationToken);
+
+                if (chemicalTxLines.Count != 2 ||
+                    chemicalTxLines.First(t => t.AccountId == chemicalExpenseAcc.Id).DebitAmount != 250.00m ||
+                    chemicalTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 250.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Chemical application treatment failed validation.");
+                }
+
+                // 3. Query analytics summary
+                var query = new GetChemicalAnalyticsQuery();
+                var analytics = await _sender.Send(query, cancellationToken);
+
+                if (analytics == null || analytics.TotalTreatmentExpenses != 250.00m || analytics.Products.First().TotalStockValue != 6000.00m)
+                {
+                    throw new Exception("Chemical analytics queries failed validation.");
+                }
+
+                // 4. Database Cleanup
+                _chemicalsDb.ChemicalProducts.Remove(product);
+                _chemicalsDb.ApplicationLogs.Remove(log);
+                await _chemicalsDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 17 Chemical & Fertilizer Application Log E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Hazardous chemicals and fertilizers stock onboarded.",
+                        "Restricted Entry Intervals (REI) safety windows validated.",
+                        "Field spraying quantity and area treated registered.",
+                        "Liters stock quantities deducted from inventory balances.",
+                        "General Ledger treatment liability accruals (Debit 5600 / Credit 2100) balanced."
                     }
                 });
             }

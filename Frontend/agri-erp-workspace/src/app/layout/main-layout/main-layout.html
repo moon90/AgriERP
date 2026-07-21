@@ -87,6 +87,12 @@
                 <span class="icon">💧</span> Water & Irrigation
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/chemicals" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🧪</span> Chemicals & Safety
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

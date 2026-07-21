@@ -60,6 +60,9 @@
     <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Application\AgriERP.Modules.Irrigation.Application.csproj" />
     <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Infrastructure\AgriERP.Modules.Irrigation.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Presentation\AgriERP.Modules.Irrigation.Presentation.csproj" />
+    <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Application\AgriERP.Modules.Chemicals.Application.csproj" />
+    <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Infrastructure\AgriERP.Modules.Chemicals.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Chemicals\AgriERP.Modules.Chemicals.Presentation\AgriERP.Modules.Chemicals.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

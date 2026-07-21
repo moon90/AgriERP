@@ -80,6 +80,12 @@
     <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Infrastructure/AgriERP.Modules.Irrigation.Infrastructure.csproj" />
     <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Presentation/AgriERP.Modules.Irrigation.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Chemicals/">
+    <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Domain/AgriERP.Modules.Chemicals.Domain.csproj" />
+    <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Application/AgriERP.Modules.Chemicals.Application.csproj" />
+    <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Infrastructure/AgriERP.Modules.Chemicals.Infrastructure.csproj" />
+    <Project Path="src/Chemicals/AgriERP.Modules.Chemicals.Presentation/AgriERP.Modules.Chemicals.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

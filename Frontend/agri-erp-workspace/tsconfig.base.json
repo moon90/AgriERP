@@ -48,6 +48,9 @@
       ],
       "@agri-erp-workspace/irrigation": [
         "./libs/features/irrigation/src/index.ts"
+      ],
+      "@agri-erp-workspace/chemicals": [
+        "./libs/features/chemicals/src/index.ts"
       ]
     }
   },
