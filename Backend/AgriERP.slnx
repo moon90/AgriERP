@@ -74,6 +74,12 @@
     <Project Path="src/Land/AgriERP.Modules.Land.Infrastructure/AgriERP.Modules.Land.Infrastructure.csproj" />
     <Project Path="src/Land/AgriERP.Modules.Land.Presentation/AgriERP.Modules.Land.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Irrigation/">
+    <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Domain/AgriERP.Modules.Irrigation.Domain.csproj" />
+    <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Application/AgriERP.Modules.Irrigation.Application.csproj" />
+    <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Infrastructure/AgriERP.Modules.Irrigation.Infrastructure.csproj" />
+    <Project Path="src/Irrigation/AgriERP.Modules.Irrigation.Presentation/AgriERP.Modules.Irrigation.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

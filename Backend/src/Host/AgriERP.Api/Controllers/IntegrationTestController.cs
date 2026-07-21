@@ -63,6 +63,11 @@ using AgriERP.Modules.Land.Application.Land.Commands.CreateLandLease;
 using AgriERP.Modules.Land.Application.Land.Commands.CalculateLeasePayment;
 using AgriERP.Modules.Land.Application.Land.Queries.GetLeasePortfolio;
 using AgriERP.Modules.Land.Domain;
+using AgriERP.Modules.Irrigation.Infrastructure.Persistence;
+using AgriERP.Modules.Irrigation.Application.Irrigation.Commands.CreateWaterSource;
+using AgriERP.Modules.Irrigation.Application.Irrigation.Commands.LogIrrigationUsage;
+using AgriERP.Modules.Irrigation.Application.Irrigation.Queries.GetWaterUsage;
+using AgriERP.Modules.Irrigation.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -94,6 +99,7 @@ namespace AgriERP.Api.Controllers
         private readonly LogisticsDbContext _logisticsDb;
         private readonly TradingDbContext _tradingDb;
         private readonly LandDbContext _landDb;
+        private readonly IrrigationDbContext _irrigationDb;
         private readonly ITenantProvider _tenantProvider;
   
         public IntegrationTestController(
@@ -109,6 +115,7 @@ namespace AgriERP.Api.Controllers
             LogisticsDbContext logisticsDb,
             TradingDbContext tradingDb,
             LandDbContext landDb,
+            IrrigationDbContext irrigationDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -123,6 +130,7 @@ namespace AgriERP.Api.Controllers
             _logisticsDb = logisticsDb;
             _tradingDb = tradingDb;
             _landDb = landDb;
+            _irrigationDb = irrigationDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -2014,6 +2022,130 @@ namespace AgriERP.Api.Controllers
                         "Sharecrop payout dynamic value calculations (Harvest Yield * Share% * Crop Price) verified.",
                         "General Ledger double-entry rent liability accruals (Debit 5400/5410 / Credit 2100) balanced.",
                         "Active leases portfolio tracking dashboards audited."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-irrigation-verification")]
+        public async Task<IActionResult> RunIrrigationVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Water Source (500,000 Gallons cap)
+                var createSourceCmd = new CreateWaterSourceCommand(
+                    SourceName: "E2E Well Source",
+                    PermitNumber: "PERMIT-E2E-99",
+                    MaxAllocatedGallons: 500000.00m
+                );
+
+                var sourceId = await _sender.Send(createSourceCmd, cancellationToken);
+                var source = await _irrigationDb.WaterSources.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
+                if (source == null || source.Status != "Active" || source.MaxAllocatedGallons != 500000.00m)
+                {
+                    throw new Exception("Water Source creation failed validation.");
+                }
+
+                // 2. Log Pump Telemetry (1,500 Gallons pumped, 25 GPM flow, cost $0.05/Gallon -> billing $75.00)
+                var logUsageCmd = new LogIrrigationUsageCommand(
+                    WaterSourceId: sourceId,
+                    FieldId: Guid.NewGuid(),
+                    GallonsPumped: 1500.00m,
+                    FlowRateGpm: 25.00m,
+                    CostPerGallon: 0.05m,
+                    IrrigationDate: DateTime.UtcNow,
+                    Notes: "E2E Telemetry log"
+                );
+
+                var logId = await _sender.Send(logUsageCmd, cancellationToken);
+                var log = await _irrigationDb.IrrigationLogs.IgnoreQueryFilters().FirstOrDefaultAsync(l => l.Id == logId, cancellationToken);
+                if (log == null || log.GallonsPumped != 1500.00m)
+                {
+                    throw new Exception("Irrigation Log creation failed validation.");
+                }
+
+                // Verify source used gallons accumulated to 1,500
+                source = await _irrigationDb.WaterSources.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
+                if (source?.UsedGallons != 1500.00m)
+                {
+                    throw new Exception($"Used gallons not accumulated. Expected: 1500.00, Got: {source?.UsedGallons}");
+                }
+
+                // Verify Water Usage billing record of $75.00
+                var billing = await _irrigationDb.WaterUsageBillings.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.WaterSourceId == sourceId, cancellationToken);
+                if (billing == null || billing.Amount != 75.00m)
+                {
+                    throw new Exception($"Water Usage billing amount calculation failed. Expected: 75.00, Got: {billing?.Amount}");
+                }
+
+                // Verify GL postings: Water Expense (5500) / Accounts Payable (2100)
+                var waterExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5500" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (waterExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5500 or 2100 not created during water billing posting.");
+                }
+
+                var waterTxLines = await (from tl in _financeDb.TransactionLines
+                                         join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                         where je.TenantId == testTenantId && je.Description.Contains("Water")
+                                         select tl).ToListAsync(cancellationToken);
+
+                if (waterTxLines.Count != 2 ||
+                    waterTxLines.First(t => t.AccountId == waterExpenseAcc.Id).DebitAmount != 75.00m ||
+                    waterTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 75.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Water utility billing failed validation.");
+                }
+
+                // 3. Query portfolio summary
+                var query = new GetWaterUsageQuery();
+                var portfolio = await _sender.Send(query, cancellationToken);
+
+                if (portfolio == null || portfolio.TotalUtilityExpenses != 75.00m || portfolio.Sources.First().CompliancePercentage != 0.3m)
+                {
+                    throw new Exception("Irrigation portfolio query summaries failed validation.");
+                }
+
+                // 4. Database Cleanup
+                _irrigationDb.WaterSources.Remove(source);
+                _irrigationDb.IrrigationLogs.Remove(log);
+                _irrigationDb.WaterUsageBillings.Remove(billing);
+                await _irrigationDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 16 Water Rights & Irrigation Management E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Water sources allocations and permits onboarded.",
+                        "Flow meters telemetry logs (Gallons/GPM) ingested.",
+                        "Volumetric source allocation consumption logs updated.",
+                        "Water usage utility billing amounts calculated.",
+                        "General Ledger utility liability accruals (Debit 5500 / Credit 2100) balanced."
                     }
                 });
             }

@@ -57,6 +57,9 @@
     <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Application\AgriERP.Modules.Land.Application.csproj" />
     <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Infrastructure\AgriERP.Modules.Land.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Presentation\AgriERP.Modules.Land.Presentation.csproj" />
+    <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Application\AgriERP.Modules.Irrigation.Application.csproj" />
+    <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Infrastructure\AgriERP.Modules.Irrigation.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Irrigation\AgriERP.Modules.Irrigation.Presentation\AgriERP.Modules.Irrigation.Presentation.csproj" />
   </ItemGroup>
 
 </Project>
