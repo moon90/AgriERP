@@ -56,6 +56,12 @@
     <Project Path="src/Crops/AgriERP.Modules.Crops.Infrastructure/AgriERP.Modules.Crops.Infrastructure.csproj" />
     <Project Path="src/Crops/AgriERP.Modules.Crops.Presentation/AgriERP.Modules.Crops.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Logistics/">
+    <Project Path="src/Logistics/AgriERP.Modules.Logistics.Domain/AgriERP.Modules.Logistics.Domain.csproj" />
+    <Project Path="src/Logistics/AgriERP.Modules.Logistics.Application/AgriERP.Modules.Logistics.Application.csproj" />
+    <Project Path="src/Logistics/AgriERP.Modules.Logistics.Infrastructure/AgriERP.Modules.Logistics.Infrastructure.csproj" />
+    <Project Path="src/Logistics/AgriERP.Modules.Logistics.Presentation/AgriERP.Modules.Logistics.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

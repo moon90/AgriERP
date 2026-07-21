@@ -45,6 +45,12 @@ using AgriERP.Modules.Crops.Application.Crops.Commands.LogFieldActivity;
 using AgriERP.Modules.Crops.Application.Crops.Commands.HarvestCropCycle;
 using AgriERP.Modules.Crops.Application.Crops.Queries.GetCropCycles;
 using AgriERP.Modules.Crops.Domain;
+using AgriERP.Modules.Logistics.Infrastructure.Persistence;
+using AgriERP.Modules.Logistics.Application.Logistics.Commands.CreateElevator;
+using AgriERP.Modules.Logistics.Application.Logistics.Commands.CreateWeighbridgeTicket;
+using AgriERP.Modules.Logistics.Application.Logistics.Commands.CalculateStorageCharge;
+using AgriERP.Modules.Logistics.Application.Logistics.Queries.GetStorageAnalytics;
+using AgriERP.Modules.Logistics.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -73,6 +79,7 @@ namespace AgriERP.Api.Controllers
         private readonly HrDbContext _hrDb;
         private readonly AssetsDbContext _assetsDb;
         private readonly CropsDbContext _cropsDb;
+        private readonly LogisticsDbContext _logisticsDb;
         private readonly ITenantProvider _tenantProvider;
 
         public IntegrationTestController(
@@ -85,6 +92,7 @@ namespace AgriERP.Api.Controllers
             HrDbContext hrDb,
             AssetsDbContext assetsDb,
             CropsDbContext cropsDb,
+            LogisticsDbContext logisticsDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -96,6 +104,7 @@ namespace AgriERP.Api.Controllers
             _hrDb = hrDb;
             _assetsDb = assetsDb;
             _cropsDb = cropsDb;
+            _logisticsDb = logisticsDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -1544,6 +1553,138 @@ namespace AgriERP.Api.Controllers
                         "Crop cycle harvested with actual yield registration.",
                         "WIP cost release ledger postings (Debit 1210 / Credit 1410) verified.",
                         "Yield cost efficiency analytics (cost-per-ton) queried."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-logistics-verification")]
+        public async Task<IActionResult> RunLogisticsVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Grain Elevator Silo (Capacity: 100 Tons, Rental Rate: $0.50/Ton/Day)
+                var createElevatorCmd = new CreateElevatorCommand("Silo E2E-A", 100.0m, 0.50m);
+                var elevatorId = await _sender.Send(createElevatorCmd, cancellationToken);
+
+                // 2. Ingest a Weighbridge Ticket (Gross: 25.0 Tons, Tare: 5.0 Tons, Moisture: 16.5%, Impurity: 2.0%)
+                var createTicketCmd = new CreateWeighbridgeTicketCommand(
+                    TicketNumber: "TICKET-E2E-001",
+                    ElevatorId: elevatorId,
+                    VehicleNumber: "TRUCK-99-99",
+                    GrossWeightTons: 25.0m,
+                    TareWeightTons: 5.0m,
+                    MoisturePercentage: 16.5m, // 2.5% excess
+                    ImpurityPercentage: 2.0m,
+                    ContractClientId: "CLIENT-E2E",
+                    TicketDate: DateTime.UtcNow
+                );
+                var ticketId = await _sender.Send(createTicketCmd, cancellationToken);
+
+                // Verify net weight: 20.0 Tons, and quality adjustments deductions:
+                // Moisture excess: 2.5% -> 2.5 * 0.012 * 20 = 0.60 Tons
+                // Impurities: 2% -> 2.0 * 0.01 * 20 = 0.40 Tons
+                // Final Billable Weight = 20.0 - 0.60 - 0.40 = 19.0 Tons
+                var ticket = await _logisticsDb.WeighbridgeTickets.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
+                if (ticket == null || ticket.NetWeightTons != 20.0m || ticket.FinalBillableWeightTons != 19.0m)
+                {
+                    throw new Exception($"Weighbridge ticket quality deductions failed validation. Expected billable: 19.00, Got: {ticket?.FinalBillableWeightTons}");
+                }
+
+                // Verify elevator occupancy increased by 20.0 Tons (Net weight)
+                var elevator = await _logisticsDb.Elevators.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == elevatorId, cancellationToken);
+                if (elevator == null || elevator.CurrentStoredTons != 20.0m)
+                {
+                    throw new Exception($"Elevator stored capacity occupancy tracking failed. Expected: 20.00, Got: {elevator?.CurrentStoredTons}");
+                }
+
+                // 3. Log Storage charge for 10 Days: Charge = 19.0 Tons * 10 Days * $0.50 = $95.00
+                var chargeCmd = new CalculateStorageChargeCommand(ticketId, 10, DateTime.UtcNow);
+                var chargeId = await _sender.Send(chargeCmd, cancellationToken);
+
+                var charge = await _logisticsDb.StorageCharges.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == chargeId, cancellationToken);
+                if (charge == null || charge.TotalCharge != 95.00m || !charge.IsBilled)
+                {
+                    throw new Exception($"Storage charge calculation validation failed. Expected cost: 95.00, Got: {charge?.TotalCharge}");
+                }
+
+                // Verify ticket status updated to Billed
+                ticket = await _logisticsDb.WeighbridgeTickets.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
+                if (ticket == null || ticket.Status != "Billed")
+                {
+                    throw new Exception("Weighbridge ticket status transition to Billed failed.");
+                }
+
+                // Verify ledger billing entry: Accounts Receivable (1100) Debited by $95.00 / Storage Rental Revenue (4200) Credited by $95.00
+                var arAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1100" && a.TenantId == testTenantId, cancellationToken);
+                var revAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "4200" && a.TenantId == testTenantId, cancellationToken);
+
+                if (arAcc == null || revAcc == null)
+                {
+                    throw new Exception("GL Accounts Receivable or Storage Revenue accounts not created during billing.");
+                }
+
+                var billingTxLines = await (from tl in _financeDb.TransactionLines
+                                           join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                           where je.TenantId == testTenantId && je.Description.Contains("Storage")
+                                           select tl).ToListAsync(cancellationToken);
+
+                if (billingTxLines.Count != 2 || 
+                    billingTxLines.First(t => t.AccountId == arAcc.Id).DebitAmount != 95.00m ||
+                    billingTxLines.First(t => t.AccountId == revAcc.Id).CreditAmount != 95.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for storage charge billing failed validation.");
+                }
+
+                // 4. Query storage analytics
+                var query = new GetStorageAnalyticsQuery();
+                var analytics = await _sender.Send(query, cancellationToken);
+
+                if (analytics == null || analytics.TotalBilledRevenue != 95.00m || analytics.PendingBillingTicketsCount != 0)
+                {
+                    throw new Exception("Storage utilization and revenue billing analytics query failed validation.");
+                }
+
+                // 5. Perform database cleanups
+                _logisticsDb.StorageCharges.Remove(charge);
+                _logisticsDb.WeighbridgeTickets.Remove(ticket);
+                _logisticsDb.Elevators.Remove(elevator);
+                await _logisticsDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 13 Supply Chain Logistics & Grain Elevator Storage E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Grain elevator silo onboarded with capacity configurations.",
+                        "Weighbridge ticket received and quality adjustments deductions calculated.",
+                        "Storage quality shrinkage dockings (moisture excess/impurities) validated.",
+                        "Silo capacity constraints and net weight occupancy updates verified.",
+                        "Storage days fees evaluated and calculated.",
+                        "Elevator billing journal entries (Debit 1100 / Credit 4200) verified in GL.",
+                        "Storage capacity utilization dashboards analytics queried."
                     }
                 });
             }
