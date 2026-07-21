@@ -58,6 +58,11 @@ using AgriERP.Modules.Trading.Application.Trading.Commands.OpenHedgePosition;
 using AgriERP.Modules.Trading.Application.Trading.Commands.CloseHedgePosition;
 using AgriERP.Modules.Trading.Application.Trading.Queries.GetTradingPortfolio;
 using AgriERP.Modules.Trading.Domain;
+using AgriERP.Modules.Land.Infrastructure.Persistence;
+using AgriERP.Modules.Land.Application.Land.Commands.CreateLandLease;
+using AgriERP.Modules.Land.Application.Land.Commands.CalculateLeasePayment;
+using AgriERP.Modules.Land.Application.Land.Queries.GetLeasePortfolio;
+using AgriERP.Modules.Land.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -88,8 +93,9 @@ namespace AgriERP.Api.Controllers
         private readonly CropsDbContext _cropsDb;
         private readonly LogisticsDbContext _logisticsDb;
         private readonly TradingDbContext _tradingDb;
+        private readonly LandDbContext _landDb;
         private readonly ITenantProvider _tenantProvider;
- 
+  
         public IntegrationTestController(
             ISender sender, 
             IPublisher publisher,
@@ -102,6 +108,7 @@ namespace AgriERP.Api.Controllers
             CropsDbContext cropsDb,
             LogisticsDbContext logisticsDb,
             TradingDbContext tradingDb,
+            LandDbContext landDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -115,6 +122,7 @@ namespace AgriERP.Api.Controllers
             _cropsDb = cropsDb;
             _logisticsDb = logisticsDb;
             _tradingDb = tradingDb;
+            _landDb = landDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -1836,6 +1844,176 @@ namespace AgriERP.Api.Controllers
                         "Contract fulfillment compliance triggers validated.",
                         "Physical delivery revenue postings (Debit 1100 / Credit 4100) matched in GL.",
                         "Broker portfolio summary queries evaluated."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-land-verification")]
+        public async Task<IActionResult> RunLandVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Cash Rent Lease (50 Acres at $150/Acre)
+                var createCashLeaseCmd = new CreateLandLeaseCommand(
+                    LeaseNumber: "LSE-E2E-001",
+                    LandlordName: "John Doe Landlord",
+                    FieldId: Guid.NewGuid(),
+                    LeaseType: "CashRent",
+                    CashRentPerAcre: 150.00m,
+                    AreaAcres: 50.00m,
+                    LandlordSharePercentage: 0.00m,
+                    ContractStartDate: DateTime.UtcNow.AddDays(-10),
+                    ContractEndDate: DateTime.UtcNow.AddDays(350)
+                );
+
+                var cashLeaseId = await _sender.Send(createCashLeaseCmd, cancellationToken);
+                var cashLease = await _landDb.LandLeases.IgnoreQueryFilters().FirstOrDefaultAsync(l => l.Id == cashLeaseId, cancellationToken);
+                if (cashLease == null || cashLease.Status != "Active" || cashLease.AreaAcres != 50.00m)
+                {
+                    throw new Exception("Cash Rent Land Lease creation failed validation.");
+                }
+
+                // 2. Calculate Cash Rent Payment
+                var calculateCashPaymentCmd = new CalculateLeasePaymentCommand(
+                    LandLeaseId: cashLeaseId,
+                    ActualYieldTons: null,
+                    CropPricePerTon: null,
+                    PaymentDate: DateTime.UtcNow
+                );
+
+                var cashPaymentId = await _sender.Send(calculateCashPaymentCmd, cancellationToken);
+                var cashPayment = await _landDb.LeasePayments.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == cashPaymentId, cancellationToken);
+                if (cashPayment == null || cashPayment.Amount != 7500.00m)
+                {
+                    throw new Exception($"Cash Lease Rent calculation failed. Expected: 7500.00, Got: {cashPayment?.Amount}");
+                }
+
+                // Verify GL postings: Land Lease Rent Expense (5400) / Accounts Payable (2100)
+                var rentExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5400" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (rentExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5400 or 2100 not created during cash lease rent posting.");
+                }
+
+                var cashRentTxLines = await (from tl in _financeDb.TransactionLines
+                                            join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                            where je.TenantId == testTenantId && je.Description.Contains("Rent")
+                                            select tl).ToListAsync(cancellationToken);
+
+                if (cashRentTxLines.Count != 2 ||
+                    cashRentTxLines.First(t => t.AccountId == rentExpenseAcc.Id).DebitAmount != 7500.00m ||
+                    cashRentTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 7500.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Cash Rent Lease failed validation.");
+                }
+
+                // 3. Create a Sharecrop Lease (20% Landlord Share)
+                var createShareLeaseCmd = new CreateLandLeaseCommand(
+                    LeaseNumber: "LSE-E2E-002",
+                    LandlordName: "Jane Smith Landlord",
+                    FieldId: Guid.NewGuid(),
+                    LeaseType: "Sharecrop",
+                    CashRentPerAcre: 0.00m,
+                    AreaAcres: 80.00m,
+                    LandlordSharePercentage: 0.20m,
+                    ContractStartDate: DateTime.UtcNow.AddDays(-10),
+                    ContractEndDate: DateTime.UtcNow.AddDays(350)
+                );
+
+                var shareLeaseId = await _sender.Send(createShareLeaseCmd, cancellationToken);
+                var shareLease = await _landDb.LandLeases.IgnoreQueryFilters().FirstOrDefaultAsync(l => l.Id == shareLeaseId, cancellationToken);
+                if (shareLease == null || shareLease.LandlordSharePercentage != 0.20m)
+                {
+                    throw new Exception("Sharecrop Land Lease creation failed validation.");
+                }
+
+                // 4. Calculate Sharecrop Payment (15.0 Tons of Corn harvested at market price $220.00/Ton -> Share: 15 * 0.2 * 220 = $660)
+                var calculateSharePaymentCmd = new CalculateLeasePaymentCommand(
+                    LandLeaseId: shareLeaseId,
+                    ActualYieldTons: 15.00m,
+                    CropPricePerTon: 220.00m,
+                    PaymentDate: DateTime.UtcNow
+                );
+
+                var sharePaymentId = await _sender.Send(calculateSharePaymentCmd, cancellationToken);
+                var sharePayment = await _landDb.LeasePayments.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == sharePaymentId, cancellationToken);
+                if (sharePayment == null || sharePayment.Amount != 660.00m)
+                {
+                    throw new Exception($"Sharecrop rent calculation failed. Expected: 660.00, Got: {sharePayment?.Amount}");
+                }
+
+                // Verify GL postings: Sharecrop Rent Expense (5410) / Accounts Payable (2100)
+                var shareExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5410" && a.TenantId == testTenantId, cancellationToken);
+
+                if (shareExpenseAcc == null)
+                {
+                    throw new Exception("GL account 5410 not created during sharecrop rent posting.");
+                }
+
+                var shareRentTxLines = await (from tl in _financeDb.TransactionLines
+                                             join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                             where je.TenantId == testTenantId && je.Description.Contains("Sharecrop")
+                                             select tl).ToListAsync(cancellationToken);
+
+                if (shareRentTxLines.Count != 2 ||
+                    shareRentTxLines.First(t => t.AccountId == shareExpenseAcc.Id).DebitAmount != 660.00m ||
+                    shareRentTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 660.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Sharecrop Lease failed validation.");
+                }
+
+                // 5. Query portfolio details
+                var query = new GetLeasePortfolioQuery();
+                var portfolio = await _sender.Send(query, cancellationToken);
+
+                if (portfolio == null || portfolio.TotalRentExpenses != 7500.00m || portfolio.TotalSharecropExpenses != 660.00m)
+                {
+                    throw new Exception("Lease portfolio query summaries failed validation.");
+                }
+
+                // 6. Database Cleanup
+                _landDb.LandLeases.Remove(cashLease);
+                _landDb.LandLeases.Remove(shareLease);
+                _landDb.LeasePayments.Remove(cashPayment);
+                _landDb.LeasePayments.Remove(sharePayment);
+                await _landDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 15 Land Lease & Sharecrop Management E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Cash rent landlord lease contracts onboarded.",
+                        "Cash rent payment calculations (Area * Rate) verified.",
+                        "Sharecrop percentage leases setup with landlord crop share rates.",
+                        "Sharecrop payout dynamic value calculations (Harvest Yield * Share% * Crop Price) verified.",
+                        "General Ledger double-entry rent liability accruals (Debit 5400/5410 / Credit 2100) balanced.",
+                        "Active leases portfolio tracking dashboards audited."
                     }
                 });
             }

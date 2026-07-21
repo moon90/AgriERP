@@ -54,6 +54,9 @@
     <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Application\AgriERP.Modules.Trading.Application.csproj" />
     <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Infrastructure\AgriERP.Modules.Trading.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Trading\AgriERP.Modules.Trading.Presentation\AgriERP.Modules.Trading.Presentation.csproj" />
+    <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Application\AgriERP.Modules.Land.Application.csproj" />
+    <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Infrastructure\AgriERP.Modules.Land.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Land\AgriERP.Modules.Land.Presentation\AgriERP.Modules.Land.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

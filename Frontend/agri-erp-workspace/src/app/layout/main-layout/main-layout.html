@@ -75,6 +75,12 @@
                 <span class="icon">📈</span> Trading & Hedging
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/land" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🪵</span> Land & Sharecrop
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

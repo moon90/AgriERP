@@ -42,6 +42,9 @@
       ],
       "@agri-erp-workspace/trading": [
         "./libs/features/trading/src/index.ts"
+      ],
+      "@agri-erp-workspace/land": [
+        "./libs/features/land/src/index.ts"
       ]
     }
   },
