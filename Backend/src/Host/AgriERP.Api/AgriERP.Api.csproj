@@ -45,6 +45,9 @@
     <ProjectReference Include="..\..\Assets\AgriERP.Modules.Assets.Application\AgriERP.Modules.Assets.Application.csproj" />
     <ProjectReference Include="..\..\Assets\AgriERP.Modules.Assets.Infrastructure\AgriERP.Modules.Assets.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Assets\AgriERP.Modules.Assets.Presentation\AgriERP.Modules.Assets.Presentation.csproj" />
+    <ProjectReference Include="..\..\Crops\AgriERP.Modules.Crops.Application\AgriERP.Modules.Crops.Application.csproj" />
+    <ProjectReference Include="..\..\Crops\AgriERP.Modules.Crops.Infrastructure\AgriERP.Modules.Crops.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Crops\AgriERP.Modules.Crops.Presentation\AgriERP.Modules.Crops.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

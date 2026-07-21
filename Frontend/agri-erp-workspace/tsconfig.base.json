@@ -33,6 +33,9 @@
       ],
       "@agri-erp-workspace/assets": [
         "./libs/features/assets/src/index.ts"
+      ],
+      "@agri-erp-workspace/crops": [
+        "./libs/features/crops/src/index.ts"
       ]
     }
   },

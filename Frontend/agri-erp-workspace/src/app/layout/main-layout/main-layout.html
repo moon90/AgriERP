@@ -57,6 +57,12 @@
                 <span class="icon">🚜</span> Assets & Maintenance
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/crops" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🌾</span> Crops & Harvesting
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

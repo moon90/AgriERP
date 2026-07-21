@@ -29,6 +29,10 @@ using AgriERP.Modules.Assets.Application;
 using AgriERP.Modules.Assets.Infrastructure.Persistence;
 using AgriERP.Modules.Assets.Application.Common;
 using AgriERP.Modules.Assets.Presentation.Controllers;
+using AgriERP.Modules.Crops.Application;
+using AgriERP.Modules.Crops.Infrastructure.Persistence;
+using AgriERP.Modules.Crops.Application.Common;
+using AgriERP.Modules.Crops.Presentation.Controllers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
@@ -47,6 +51,7 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(TelemetryController).Assembly)
     .AddApplicationPart(typeof(EmployeesController).Assembly)
     .AddApplicationPart(typeof(AssetsController).Assembly)
+    .AddApplicationPart(typeof(CropsController).Assembly)
     .AddApplicationPart(typeof(Program).Assembly);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -70,6 +75,7 @@ builder.Services.AddFinanceApplication();
 builder.Services.AddTelemetryApplication();
 builder.Services.AddHrApplication();
 builder.Services.AddAssetsApplication();
+builder.Services.AddCropsApplication();
 
 // 6. DB Context setup for SQL Server
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -81,6 +87,7 @@ builder.Services.AddDbContext<FinanceDbContext>(options => options.UseSqlServer(
 builder.Services.AddDbContext<TelemetryDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<HrDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDbContext<AssetsDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<CropsDbContext>(options => options.UseSqlServer(connectionString));
 
 // Map db context interfaces
 builder.Services.AddScoped<IAuthDbContext>(provider => provider.GetRequiredService<AuthDbContext>());
@@ -89,6 +96,7 @@ builder.Services.AddScoped<IFinanceDbContext>(provider => provider.GetRequiredSe
 builder.Services.AddScoped<ITelemetryDbContext>(provider => provider.GetRequiredService<TelemetryDbContext>());
 builder.Services.AddScoped<IHrDbContext>(provider => provider.GetRequiredService<HrDbContext>());
 builder.Services.AddScoped<IAssetsDbContext>(provider => provider.GetRequiredService<AssetsDbContext>());
+builder.Services.AddScoped<ICropsDbContext>(provider => provider.GetRequiredService<CropsDbContext>());
 
 // Register test event handler for integration verification
 builder.Services.AddScoped<INotificationHandler<AgriERP.BuildingBlocks.Application.Events.StockValueConsumedIntegrationEvent>, AgriERP.Api.Controllers.TestStockValueConsumedIntegrationEventHandler>();
@@ -169,12 +177,14 @@ using (var scope = app.Services.CreateScope())
         var livestockDb = services.GetRequiredService<LivestockDbContext>();
         var financeDb = services.GetRequiredService<FinanceDbContext>();
         var assetsDb = services.GetRequiredService<AssetsDbContext>();
+        var cropsDb = services.GetRequiredService<CropsDbContext>();
 
         await authDb.Database.MigrateAsync();
         await inventoryDb.Database.MigrateAsync();
         await livestockDb.Database.MigrateAsync();
         await financeDb.Database.MigrateAsync();
         await assetsDb.Database.MigrateAsync();
+        await cropsDb.Database.MigrateAsync();
 
         // 2. Seeder call
         var authSeeder = services.GetRequiredService<IAuthDbSeeder>();

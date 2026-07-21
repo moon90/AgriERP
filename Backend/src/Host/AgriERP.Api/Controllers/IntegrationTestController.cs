@@ -38,6 +38,13 @@ using AgriERP.Modules.HR.Application.TimeCards.Commands.LogTimeCard;
 using AgriERP.Modules.HR.Application.TimeCards.Commands.ApproveTimeCards;
 using AgriERP.Modules.HR.Application.Payroll.Commands.ProcessPayroll;
 using AgriERP.Modules.HR.Application.Payroll.Commands.PayPayroll;
+using AgriERP.Modules.Crops.Infrastructure.Persistence;
+using AgriERP.Modules.Crops.Application.Crops.Commands.CreateCropField;
+using AgriERP.Modules.Crops.Application.Crops.Commands.CreateCropCycle;
+using AgriERP.Modules.Crops.Application.Crops.Commands.LogFieldActivity;
+using AgriERP.Modules.Crops.Application.Crops.Commands.HarvestCropCycle;
+using AgriERP.Modules.Crops.Application.Crops.Queries.GetCropCycles;
+using AgriERP.Modules.Crops.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -65,6 +72,7 @@ namespace AgriERP.Api.Controllers
         private readonly FinanceDbContext _financeDb;
         private readonly HrDbContext _hrDb;
         private readonly AssetsDbContext _assetsDb;
+        private readonly CropsDbContext _cropsDb;
         private readonly ITenantProvider _tenantProvider;
 
         public IntegrationTestController(
@@ -76,6 +84,7 @@ namespace AgriERP.Api.Controllers
             FinanceDbContext financeDb,
             HrDbContext hrDb,
             AssetsDbContext assetsDb,
+            CropsDbContext cropsDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -86,6 +95,7 @@ namespace AgriERP.Api.Controllers
             _financeDb = financeDb;
             _hrDb = hrDb;
             _assetsDb = assetsDb;
+            _cropsDb = cropsDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -1366,6 +1376,174 @@ namespace AgriERP.Api.Controllers
                         "Dynamic maintenance event postings (Debit 5600 / Credit 1010) logged to GL.",
                         "Updated odometer and run hours on asset model from maintenance log.",
                         "Straight-line asset depreciation schedule projections verified."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-crops-verification")]
+        public async Task<IActionResult> RunCropsVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create a Loam soil Field of 10 acres
+                var createFieldCmd = new CreateCropFieldCommand("E2E Field Loam", 10.0m, "Loam");
+                var fieldId = await _sender.Send(createFieldCmd, cancellationToken);
+
+                // 2. Start a Corn Crop Cycle
+                var createCycleCmd = new CreateCropCycleCommand(fieldId, "Corn", "Variety Corn-X", DateTime.UtcNow);
+                var cycleId = await _sender.Send(createCycleCmd, cancellationToken);
+
+                // Verify initial yield forecast: 10 * 4.5 (base yield) * 1.2 (loam) * 0.65 (initial activity factor) = 35.10 Tons
+                var cycle = await _cropsDb.CropCycles.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == cycleId, cancellationToken);
+                if (cycle == null || cycle.ExpectedYieldTons != 35.10m)
+                {
+                    throw new Exception($"Initial harvest yield forecast validation failed. Expected: 35.10, Got: {cycle?.ExpectedYieldTons}");
+                }
+
+                // 3. Log Tilling activity ($300.00 service cost)
+                var logTillingCmd = new LogFieldActivityCommand(
+                    CropCycleId: cycleId,
+                    ActivityType: "Tilling",
+                    ActivityDate: DateTime.UtcNow,
+                    Cost: 300.00m,
+                    InputMaterialId: null,
+                    InputQuantity: null,
+                    Notes: "E2E Tilling"
+                );
+                await _sender.Send(logTillingCmd, cancellationToken);
+
+                // Verify forecast increases: factor is 0.65 + 0.10 = 0.75. Yield: 10 * 4.5 * 1.2 * 0.75 = 40.50 Tons
+                cycle = await _cropsDb.CropCycles.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == cycleId, cancellationToken);
+                if (cycle == null || cycle.ExpectedYieldTons != 40.50m)
+                {
+                    throw new Exception($"Harvest yield forecast after tilling validation failed. Expected: 40.50, Got: {cycle?.ExpectedYieldTons}");
+                }
+
+                // Verify ledger WIP posting: Debit Crop WIP (1410) of $300.00 / Credit Cash (1010) of $300.00
+                var wipAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1410" && a.TenantId == testTenantId, cancellationToken);
+                var cashAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1010" && a.TenantId == testTenantId, cancellationToken);
+
+                if (wipAcc == null || cashAcc == null)
+                {
+                    throw new Exception("GL WIP or Cash accounts not created during tilling log.");
+                }
+
+                var tillingTxLines = await (from tl in _financeDb.TransactionLines
+                                           join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                           where je.TenantId == testTenantId && je.Description.Contains("Tilling")
+                                           select tl).ToListAsync(cancellationToken);
+
+                if (tillingTxLines.Count != 2 || 
+                    tillingTxLines.First(t => t.AccountId == wipAcc.Id).DebitAmount != 300.00m ||
+                    tillingTxLines.First(t => t.AccountId == cashAcc.Id).CreditAmount != 300.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for tilling WIP capitalization failed validation.");
+                }
+
+                // 4. Log Fertilizer application ($450.00 cost)
+                var logFertilizerCmd = new LogFieldActivityCommand(
+                    CropCycleId: cycleId,
+                    ActivityType: "Fertilizer",
+                    ActivityDate: DateTime.UtcNow,
+                    Cost: 450.00m,
+                    InputMaterialId: null,
+                    InputQuantity: null,
+                    Notes: "E2E Fertilizing"
+                );
+                await _sender.Send(logFertilizerCmd, cancellationToken);
+
+                // Verify forecast increases: factor is 0.75 + 0.15 = 0.90. Yield: 10 * 4.5 * 1.2 * 0.90 = 48.60 Tons
+                cycle = await _cropsDb.CropCycles.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == cycleId, cancellationToken);
+                if (cycle == null || cycle.ExpectedYieldTons != 48.60m)
+                {
+                    throw new Exception($"Harvest yield forecast after fertilizing validation failed. Expected: 48.60, Got: {cycle?.ExpectedYieldTons}");
+                }
+
+                // 5. Harvest the Crop Cycle with 52.0 Tons actual yield
+                var harvestCmd = new HarvestCropCycleCommand(cycleId, DateTime.UtcNow, 52.0m);
+                await _sender.Send(harvestCmd, cancellationToken);
+
+                cycle = await _cropsDb.CropCycles.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == cycleId, cancellationToken);
+                if (cycle == null || cycle.Status != "Harvested" || cycle.ActualYieldTons != 52.0m)
+                {
+                    throw new Exception("Crop cycle harvest status failed validation.");
+                }
+
+                // Verify ledger WIP release: Debit Finished Crop Stock (1210) of $750.00 / Credit Crop WIP (1410) of $750.00
+                var stockAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1210" && a.TenantId == testTenantId, cancellationToken);
+                if (stockAcc == null)
+                {
+                    throw new Exception("GL Finished Crop Stock account not created during harvest log.");
+                }
+
+                var harvestTxLines = await (from tl in _financeDb.TransactionLines
+                                           join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                           where je.TenantId == testTenantId && je.Description.Contains("Harvest")
+                                           select tl).ToListAsync(cancellationToken);
+
+                if (harvestTxLines.Count != 2 || 
+                    harvestTxLines.First(t => t.AccountId == stockAcc.Id).DebitAmount != 750.00m ||
+                    harvestTxLines.First(t => t.AccountId == wipAcc.Id).CreditAmount != 750.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for harvest WIP cost transfer failed validation.");
+                }
+
+                // 6. Query expected vs actual yields and efficiency metrics
+                var query = new GetCropCyclesQuery();
+                var dtoList = await _sender.Send(query, cancellationToken);
+                var cycleDto = dtoList.FirstOrDefault(d => d.Id == cycleId);
+
+                if (cycleDto == null || 
+                    Math.Round(cycleDto.CostPerExpectedTon, 2) != Math.Round(750.00m / 48.60m, 2) ||
+                    Math.Round(cycleDto.CostPerActualTon ?? 0, 2) != Math.Round(750.00m / 52.00m, 2))
+                {
+                    throw new Exception("Crop yield cost efficiency analytics failed validation.");
+                }
+
+                // 7. Perform database cleanups
+                var activities = await _cropsDb.FieldActivities.IgnoreQueryFilters().Where(a => a.CropCycleId == cycleId).ToListAsync(cancellationToken);
+                _cropsDb.FieldActivities.RemoveRange(activities);
+                _cropsDb.CropCycles.Remove(cycle);
+                var field = await _cropsDb.CropFields.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == fieldId, cancellationToken);
+                if (field != null) _cropsDb.CropFields.Remove(field);
+                await _cropsDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 12 Crop Lifecycle Management & Harvest Yield Forecasting E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Crop field onboarded with Loam soil parameters.",
+                        "Initial straight-line expected yield forecast calculation verified.",
+                        "Tilling activity logged and Expected Yield dynamic updates validated.",
+                        "Direct activity expenditure WIP capitalizations (Debit 1410 / Credit 1010) posted.",
+                        "Fertilizing activity logged and expected yield re-forecast validated.",
+                        "Crop cycle harvested with actual yield registration.",
+                        "WIP cost release ledger postings (Debit 1210 / Credit 1410) verified.",
+                        "Yield cost efficiency analytics (cost-per-ton) queried."
                     }
                 });
             }
