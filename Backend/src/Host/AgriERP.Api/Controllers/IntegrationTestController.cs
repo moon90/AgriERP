@@ -78,6 +78,13 @@ using AgriERP.Modules.Agronomy.Application.Agronomy.Commands.RecordSoilSample;
 using AgriERP.Modules.Agronomy.Application.Agronomy.Commands.AddAgronomyRecommendation;
 using AgriERP.Modules.Agronomy.Application.Agronomy.Queries.GetSoilInsights;
 using AgriERP.Modules.Agronomy.Domain;
+using AgriERP.Modules.Weather.Infrastructure.Persistence;
+using AgriERP.Modules.Weather.Application.Weather.Commands.RegisterWeatherStation;
+using AgriERP.Modules.Weather.Application.Weather.Commands.LogWeatherReading;
+using AgriERP.Modules.Weather.Application.Weather.Commands.ConfigureFrostAlert;
+using AgriERP.Modules.Weather.Application.Weather.Commands.ProcessWeatherSubscriptionBill;
+using AgriERP.Modules.Weather.Application.Weather.Queries.GetWeatherAnalytics;
+using AgriERP.Modules.Weather.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -112,6 +119,7 @@ namespace AgriERP.Api.Controllers
         private readonly IrrigationDbContext _irrigationDb;
         private readonly ChemicalsDbContext _chemicalsDb;
         private readonly AgronomyDbContext _agronomyDb;
+        private readonly WeatherDbContext _weatherDb;
         private readonly ITenantProvider _tenantProvider;
   
         public IntegrationTestController(
@@ -130,6 +138,7 @@ namespace AgriERP.Api.Controllers
             IrrigationDbContext irrigationDb,
             ChemicalsDbContext chemicalsDb,
             AgronomyDbContext agronomyDb,
+            WeatherDbContext weatherDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -147,6 +156,7 @@ namespace AgriERP.Api.Controllers
             _irrigationDb = irrigationDb;
             _chemicalsDb = chemicalsDb;
             _agronomyDb = agronomyDb;
+            _weatherDb = weatherDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -2402,6 +2412,146 @@ namespace AgriERP.Api.Controllers
                         "Agronomist advice fertilization target rates recorded.",
                         "Lab testing fee statements generated.",
                         "General Ledger diagnostic liability accruals (Debit 5700 / Credit 2100) balanced."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-weather-verification")]
+        public async Task<IActionResult> RunWeatherVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Register Weather Station
+                var registerStationCmd = new RegisterWeatherStationCommand(
+                    StationName: "E2E Station 01",
+                    LocationLatitude: 41.534212m,
+                    LocationLongitude: -93.618231m
+                );
+
+                var stationId = await _sender.Send(registerStationCmd, cancellationToken);
+                var station = await _weatherDb.WeatherStations.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == stationId, cancellationToken);
+                if (station == null || station.StationName != "E2E Station 01")
+                {
+                    throw new Exception("Weather Station onboarding failed validation.");
+                }
+
+                // 2. Configure Frost Alert limits for target field
+                var targetFieldId = Guid.NewGuid();
+                var configCmd = new ConfigureFrostAlertCommand(
+                    FieldId: targetFieldId,
+                    TemperatureThreshold: 3.00m,
+                    AlertEmail: "alert@agrierp.com",
+                    IsAlertActive: true
+                );
+
+                var configId = await _sender.Send(configCmd, cancellationToken);
+                var config = await _weatherDb.FrostAlertConfigs.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == configId, cancellationToken);
+                if (config == null || config.TemperatureThreshold != 3.00m)
+                {
+                    throw new Exception("Frost alert config registration failed validation.");
+                }
+
+                // 3. Log reading of 1.5C (below threshold -> triggers alert)
+                var logReadingCmd = new LogWeatherReadingCommand(
+                    WeatherStationId: stationId,
+                    FieldId: targetFieldId,
+                    TemperatureCelsius: 1.50m,
+                    HumidityPercentage: 75.00m,
+                    WindSpeedKph: 12.00m,
+                    PrecipitationMm: 0.00m,
+                    SoilMoisturePercentage: 42.00m
+                );
+
+                var readingId = await _sender.Send(logReadingCmd, cancellationToken);
+                var reading = await _weatherDb.WeatherReadings.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == readingId, cancellationToken);
+                if (reading == null || !reading.IsFrostRisk)
+                {
+                    throw new Exception("Frost warning alerting algorithm failed. Temperature of 1.5C is below 3.0C limit and should flag Frost Risk.");
+                }
+
+                // 4. Process Subscription Invoice of $75.00
+                var billCmd = new ProcessWeatherSubscriptionBillCommand(
+                    SubscriptionFee: 75.00m,
+                    BillingDate: DateTime.UtcNow
+                );
+
+                var billingId = await _sender.Send(billCmd, cancellationToken);
+                var billing = await _weatherDb.WeatherSubscriptionBillings.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.Id == billingId, cancellationToken);
+                if (billing == null || billing.SubscriptionFee != 75.00m)
+                {
+                    throw new Exception("Subscription invoice logging failed validation.");
+                }
+
+                // Verify GL postings: Subscriptions Expense (5800) / Accounts Payable (2100)
+                var subExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5800" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (subExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5800 or 2100 not created during weather subscription fee posting.");
+                }
+
+                var subTxLines = await (from tl in _financeDb.TransactionLines
+                                       join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                       where je.TenantId == testTenantId && je.Description.Contains("Weather")
+                                       select tl).ToListAsync(cancellationToken);
+
+                if (subTxLines.Count != 2 ||
+                    subTxLines.First(t => t.AccountId == subExpenseAcc.Id).DebitAmount != 75.00m ||
+                    subTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 75.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Weather subscription fee failed validation.");
+                }
+
+                // 5. Query analytics summary
+                var query = new GetWeatherAnalyticsQuery();
+                var analytics = await _sender.Send(query, cancellationToken);
+
+                if (analytics == null || analytics.TotalSubscriptionExpenses != 75.00m || analytics.Readings.First().TemperatureCelsius != 1.50m)
+                {
+                    throw new Exception("Weather analytics queries failed validation.");
+                }
+
+                // 6. Database Cleanup
+                _weatherDb.WeatherStations.Remove(station);
+                _weatherDb.FrostAlertConfigs.Remove(config);
+                _weatherDb.WeatherReadings.Remove(reading);
+                _weatherDb.WeatherSubscriptionBillings.Remove(billing);
+                await _weatherDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 19 Weather Integration & Frost Alerting E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Weather stations telemetry sources onboarded.",
+                        "Frost limits configure per crop field locations.",
+                        "Frost warnings dynamic calculation engine validated.",
+                        "API subscription fee invoicing recorded.",
+                        "General Ledger subscription liability postings (Debit 5800 / Credit 2100) balanced."
                     }
                 });
             }

@@ -66,6 +66,9 @@
     <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Application\AgriERP.Modules.Agronomy.Application.csproj" />
     <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Infrastructure\AgriERP.Modules.Agronomy.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Agronomy\AgriERP.Modules.Agronomy.Presentation\AgriERP.Modules.Agronomy.Presentation.csproj" />
+    <ProjectReference Include="..\..\Weather\AgriERP.Modules.Weather.Application\AgriERP.Modules.Weather.Application.csproj" />
+    <ProjectReference Include="..\..\Weather\AgriERP.Modules.Weather.Infrastructure\AgriERP.Modules.Weather.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Weather\AgriERP.Modules.Weather.Presentation\AgriERP.Modules.Weather.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

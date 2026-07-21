@@ -92,6 +92,12 @@
     <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Infrastructure/AgriERP.Modules.Agronomy.Infrastructure.csproj" />
     <Project Path="src/Agronomy/AgriERP.Modules.Agronomy.Presentation/AgriERP.Modules.Agronomy.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Weather/">
+    <Project Path="src/Weather/AgriERP.Modules.Weather.Domain/AgriERP.Modules.Weather.Domain.csproj" />
+    <Project Path="src/Weather/AgriERP.Modules.Weather.Application/AgriERP.Modules.Weather.Application.csproj" />
+    <Project Path="src/Weather/AgriERP.Modules.Weather.Infrastructure/AgriERP.Modules.Weather.Infrastructure.csproj" />
+    <Project Path="src/Weather/AgriERP.Modules.Weather.Presentation/AgriERP.Modules.Weather.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>
