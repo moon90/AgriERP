@@ -85,6 +85,12 @@ using AgriERP.Modules.Weather.Application.Weather.Commands.ConfigureFrostAlert;
 using AgriERP.Modules.Weather.Application.Weather.Commands.ProcessWeatherSubscriptionBill;
 using AgriERP.Modules.Weather.Application.Weather.Queries.GetWeatherAnalytics;
 using AgriERP.Modules.Weather.Domain;
+using AgriERP.Modules.Insurance.Infrastructure.Persistence;
+using AgriERP.Modules.Insurance.Application.Insurance.Commands.CreateInsurancePolicy;
+using AgriERP.Modules.Insurance.Application.Insurance.Commands.SubmitLossClaim;
+using AgriERP.Modules.Insurance.Application.Insurance.Commands.SettleLossClaim;
+using AgriERP.Modules.Insurance.Application.Insurance.Queries.GetInsuranceAnalytics;
+using AgriERP.Modules.Insurance.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -120,6 +126,7 @@ namespace AgriERP.Api.Controllers
         private readonly ChemicalsDbContext _chemicalsDb;
         private readonly AgronomyDbContext _agronomyDb;
         private readonly WeatherDbContext _weatherDb;
+        private readonly InsuranceDbContext _insuranceDb;
         private readonly ITenantProvider _tenantProvider;
   
         public IntegrationTestController(
@@ -139,6 +146,7 @@ namespace AgriERP.Api.Controllers
             ChemicalsDbContext chemicalsDb,
             AgronomyDbContext agronomyDb,
             WeatherDbContext weatherDb,
+            InsuranceDbContext insuranceDb,
             ITenantProvider tenantProvider)
         {
             _sender = sender;
@@ -157,6 +165,7 @@ namespace AgriERP.Api.Controllers
             _chemicalsDb = chemicalsDb;
             _agronomyDb = agronomyDb;
             _weatherDb = weatherDb;
+            _insuranceDb = insuranceDb;
             _tenantProvider = tenantProvider;
         }
 
@@ -2552,6 +2561,156 @@ namespace AgriERP.Api.Controllers
                         "Frost warnings dynamic calculation engine validated.",
                         "API subscription fee invoicing recorded.",
                         "General Ledger subscription liability postings (Debit 5800 / Credit 2100) balanced."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-insurance-verification")]
+        public async Task<IActionResult> RunInsuranceVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create Insurance Policy ($50,000 coverage, $1,200 premium fee)
+                var createPolicyCmd = new CreateInsurancePolicyCommand(
+                    PolicyNumber: "POL-E2E-990",
+                    ProviderName: "AgriGuard Assurance",
+                    CoverageAmount: 50000.00m,
+                    PremiumAmount: 1200.00m,
+                    StartDate: DateTime.UtcNow.AddMonths(-1),
+                    EndDate: DateTime.UtcNow.AddMonths(11),
+                    FieldId: Guid.NewGuid()
+                );
+
+                var policyId = await _sender.Send(createPolicyCmd, cancellationToken);
+                var policy = await _insuranceDb.InsurancePolicies.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == policyId, cancellationToken);
+                if (policy == null || policy.CoverageAmount != 50000.00m)
+                {
+                    throw new Exception("Insurance policy onboarding failed validation.");
+                }
+
+                // Verify premium fee ledger posting: Insurance Expense (5900) / Accounts Payable (2100)
+                var insExpenseAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5900" && a.TenantId == testTenantId, cancellationToken);
+                var apAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2100" && a.TenantId == testTenantId, cancellationToken);
+
+                if (insExpenseAcc == null || apAcc == null)
+                {
+                    throw new Exception("GL accounts 5900 or 2100 not created during insurance premium posting.");
+                }
+
+                var premTxLines = await (from tl in _financeDb.TransactionLines
+                                         join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                         where je.TenantId == testTenantId && je.Description.Contains("Insurance Premium")
+                                         select tl).ToListAsync(cancellationToken);
+
+                if (premTxLines.Count != 2 ||
+                    premTxLines.First(t => t.AccountId == insExpenseAcc.Id).DebitAmount != 1200.00m ||
+                    premTxLines.First(t => t.AccountId == apAcc.Id).CreditAmount != 1200.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Insurance Premium failed validation.");
+                }
+
+                // 2. Submit Loss Claim for frost damage ($8,500)
+                var submitClaimCmd = new SubmitLossClaimCommand(
+                    InsurancePolicyId: policyId,
+                    ClaimNumber: "CLM-2026-F1",
+                    IncidentDate: DateTime.UtcNow,
+                    ClaimAmount: 8500.00m,
+                    Description: "Early spring freeze damage"
+                );
+
+                var claimId = await _sender.Send(submitClaimCmd, cancellationToken);
+                var claim = await _insuranceDb.LossClaims.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == claimId, cancellationToken);
+                if (claim == null || claim.ClaimAmount != 8500.00m || claim.Status != "Submitted")
+                {
+                    throw new Exception("Crop Loss Claim submission failed validation.");
+                }
+
+                // 3. Settle Loss Claim with adjuster payout ($8,000)
+                var settleCmd = new SettleLossClaimCommand(
+                    LossClaimId: claimId,
+                    PayoutAmount: 8000.00m,
+                    SettlementDate: DateTime.UtcNow
+                );
+
+                var settled = await _sender.Send(settleCmd, cancellationToken);
+                var updatedClaim = await _insuranceDb.LossClaims.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == claimId, cancellationToken);
+                if (!settled || updatedClaim?.Status != "Settled" || updatedClaim.AdjustedAmount != 8000.00m)
+                {
+                    throw new Exception("Loss claim settlement process failed validation.");
+                }
+
+                // Verify indemnity settlement ledger posting: Cash & Bank (1010) / Claims Indemnity Income (4900)
+                var cashAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "1010" && a.TenantId == testTenantId, cancellationToken);
+                var indemnityAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "4900" && a.TenantId == testTenantId, cancellationToken);
+
+                if (cashAcc == null || indemnityAcc == null)
+                {
+                    throw new Exception("GL accounts 1010 or 4900 not created during claim indemnity settlement.");
+                }
+
+                var claimTxLines = await (from tl in _financeDb.TransactionLines
+                                          join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                          where je.TenantId == testTenantId && je.Description.Contains("Indemnity Settlement")
+                                          select tl).ToListAsync(cancellationToken);
+
+                if (claimTxLines.Count != 2 ||
+                    claimTxLines.First(t => t.AccountId == cashAcc.Id).DebitAmount != 8000.00m ||
+                    claimTxLines.First(t => t.AccountId == indemnityAcc.Id).CreditAmount != 8000.00m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Claim Indemnity Settlement failed validation.");
+                }
+
+                // 4. Query analytics summary
+                var query = new GetInsuranceAnalyticsQuery();
+                var analytics = await _sender.Send(query, cancellationToken);
+
+                if (analytics == null || analytics.TotalCoverageAmount != 50000.00m || analytics.TotalClaimsRecovered != 8000.00m)
+                {
+                    throw new Exception("Insurance analytics query failed validation.");
+                }
+
+                // 5. Database Cleanup
+                _insuranceDb.InsurancePolicies.Remove(policy);
+                _insuranceDb.LossClaims.Remove(claim);
+
+                var premiumBilling = await _insuranceDb.InsurancePremiumBillings.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.InsurancePolicyId == policyId, cancellationToken);
+                if (premiumBilling != null) _insuranceDb.InsurancePremiumBillings.Remove(premiumBilling);
+
+                await _insuranceDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 20 Crop Insurance & Loss Claim Management E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Insurance policies onboarded.",
+                        "General Ledger premium expense accruals (Debit 5900 / Credit 2100) balanced.",
+                        "Crop loss incident claims filed.",
+                        "Claim adjuster settlements processed.",
+                        "General Ledger indemnity revenue postings (Debit 1010 / Credit 4900) balanced."
                     }
                 });
             }

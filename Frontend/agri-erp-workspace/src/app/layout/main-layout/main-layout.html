@@ -105,6 +105,12 @@
                 <span class="icon">❄️</span> Weather & Frost
             </a>
             }
+
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/insurance" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📜</span> Crop Insurance
+            </a>
+            }
         </nav>
 
         <div class="sidebar-footer">

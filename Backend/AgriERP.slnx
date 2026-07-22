@@ -98,6 +98,12 @@
     <Project Path="src/Weather/AgriERP.Modules.Weather.Infrastructure/AgriERP.Modules.Weather.Infrastructure.csproj" />
     <Project Path="src/Weather/AgriERP.Modules.Weather.Presentation/AgriERP.Modules.Weather.Presentation.csproj" />
   </Folder>
+  <Folder Name="/src/Insurance/">
+    <Project Path="src/Insurance/AgriERP.Modules.Insurance.Domain/AgriERP.Modules.Insurance.Domain.csproj" />
+    <Project Path="src/Insurance/AgriERP.Modules.Insurance.Application/AgriERP.Modules.Insurance.Application.csproj" />
+    <Project Path="src/Insurance/AgriERP.Modules.Insurance.Infrastructure/AgriERP.Modules.Insurance.Infrastructure.csproj" />
+    <Project Path="src/Insurance/AgriERP.Modules.Insurance.Presentation/AgriERP.Modules.Insurance.Presentation.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/AgriERP.Architecture.Tests/AgriERP.Architecture.Tests.csproj" />
   </Folder>

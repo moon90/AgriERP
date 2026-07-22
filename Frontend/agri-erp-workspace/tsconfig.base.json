@@ -57,6 +57,9 @@
       ],
       "@agri-erp-workspace/weather": [
         "./libs/features/weather/src/index.ts"
+      ],
+      "@agri-erp-workspace/insurance": [
+        "./libs/features/insurance/src/index.ts"
       ]
     }
   },
