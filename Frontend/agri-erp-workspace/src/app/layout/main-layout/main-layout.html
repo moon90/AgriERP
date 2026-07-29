@@ -1,128 +1,149 @@
 <div class="layout-container">
 
+    <!-- Modern Glassmorphism Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
-            🌱 AgriERP
+            <div class="brand-logo">🌾</div>
+            <div class="brand-text">
+                <span class="title">AgriERP</span>
+                <span class="subtitle">Enterprise Ag Platform</span>
+            </div>
         </div>
 
         <nav class="sidebar-nav">
+            <!-- Executive & Financials -->
+            <div class="nav-section-title">📊 Executive & Financials</div>
             <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">📊</span> Dashboard
+                <span class="icon">📊</span> Executive BI Dashboard
             </a>
-
-            @if (authService.hasPermission('Users.View')) {
-            <a routerLink="/users" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">👥</span> Employee Management
+            @if (authService.hasPermission('HR.View')) {
+            <a routerLink="/hr" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🧑‍🌾</span> HR & Field Labor
+            </a>
+            }
+            @if (authService.hasPermission('Assets.View')) {
+            <a routerLink="/assets" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🚜</span> Assets & Fleet
             </a>
             }
 
-            @if (authService.hasPermission('Roles.Manage')) {
-            <a routerLink="/roles" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🔐</span> Roles & Permissions
+            <!-- Agronomy & Crops -->
+            <div class="nav-section-title">🌱 Agronomy & Crops</div>
+            @if (authService.hasPermission('Crops.View')) {
+            <a routerLink="/crops" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🌾</span> Crops & Harvesting
+            </a>
+            }
+            @if (authService.hasPermission('Agronomy.View')) {
+            <a routerLink="/agronomy" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🧪</span> Soil Agronomy & N-P-K
+            </a>
+            }
+            @if (authService.hasPermission('Irrigation.View')) {
+            <a routerLink="/irrigation" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">💧</span> Water & Irrigation
+            </a>
+            }
+            @if (authService.hasPermission('Chemicals.View')) {
+            <a routerLink="/chemicals" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">☣️</span> Chemical Safety & PHI
             </a>
             }
 
+            <!-- Livestock & Animals -->
+            <div class="nav-section-title">🐄 Livestock & Animals</div>
             @if (authService.hasPermission('Livestock.View')) {
             <a routerLink="/livestock" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🐄</span> Livestock & Animals
+                <span class="icon">🐄</span> Livestock & Pedigree
             </a>
             }
 
+            <!-- Supply Chain & Trading -->
+            <div class="nav-section-title">📦 Supply Chain & Logistics</div>
             @if (authService.hasPermission('Inventory.View')) {
             <a routerLink="/inventory" routerLinkActive="active-link" class="nav-link">
                 <span class="icon">📦</span> Inventory & Stock
             </a>
             }
-
             @if (authService.hasPermission('Inventory.View')) {
             <a routerLink="/procurement" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">💼</span> Procurement Management
+                <span class="icon">💼</span> Procurement Orders
             </a>
             }
-
             @if (authService.hasPermission('Inventory.View')) {
             <a routerLink="/sales" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">📈</span> Sales & Customer Contracts
+                <span class="icon">📈</span> Sales Contracts
             </a>
             }
-
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/hr" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">👤</span> HR & Employee Payroll
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/assets" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🚜</span> Assets & Maintenance
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/crops" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🌾</span> Crops & Harvesting
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
+            @if (authService.hasPermission('Logistics.View')) {
             <a routerLink="/logistics" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🚛</span> Silo & Logistics
+                <span class="icon">🚛</span> Grain Scale & Logistics
             </a>
             }
-
-            @if (authService.hasPermission('Inventory.View')) {
+            @if (authService.hasPermission('Trading.View')) {
             <a routerLink="/trading" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">📈</span> Trading & Hedging
+                <span class="icon">📊</span> Trading & Futures Hedging
             </a>
             }
-
-            @if (authService.hasPermission('Inventory.View')) {
+            @if (authService.hasPermission('Land.View')) {
             <a routerLink="/land" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🪵</span> Land & Sharecrop
+                <span class="icon">🪵</span> Land Lease & Sharecrop
             </a>
             }
 
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/irrigation" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">💧</span> Water & Irrigation
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/chemicals" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🧪</span> Chemicals & Safety
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/agronomy" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">🌾</span> Agronomy & Soil
-            </a>
-            }
-
-            @if (authService.hasPermission('Inventory.View')) {
+            <!-- Compliance & Weather -->
+            <div class="nav-section-title">🛡️ Risk & Weather</div>
+            @if (authService.hasPermission('Weather.View')) {
             <a routerLink="/weather" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">❄️</span> Weather & Frost
+                <span class="icon">❄️</span> Weather & Frost Alert
+            </a>
+            }
+            @if (authService.hasPermission('Insurance.View')) {
+            <a routerLink="/insurance" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">📜</span> Crop Risk & MPCI
             </a>
             }
 
-            @if (authService.hasPermission('Inventory.View')) {
-            <a routerLink="/insurance" routerLinkActive="active-link" class="nav-link">
-                <span class="icon">📜</span> Crop Insurance
+            <!-- System Administration -->
+            <div class="nav-section-title">⚙️ Administration</div>
+            @if (authService.hasPermission('Users.View')) {
+            <a routerLink="/users" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">👥</span> User Management
+            </a>
+            }
+            @if (authService.hasPermission('Roles.Manage')) {
+            <a routerLink="/roles" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🔐</span> Roles & Security
             </a>
             }
         </nav>
 
         <div class="sidebar-footer">
-            <button (click)="logout()" class="logout-btn">Log Out</button>
+            <button (click)="logout()" class="logout-btn">
+                <span>🚪</span> Sign Out System
+            </button>
         </div>
     </aside>
 
+    <!-- Main Application Shell Content -->
     <main class="main-content">
         <header class="top-header">
-            <div class="user-profile">
-                <div class="avatar">A</div>
-                <span class="username">Admin User</span>
+            <div class="header-left">
+                <span class="tenant-badge">🏢 AgriERP Enterprise Tenant</span>
+                <span class="status-indicator"><span class="dot"></span> System Live</span>
+            </div>
+
+            <div class="header-right">
+                <div class="notification-icon">
+                    🔔 <span class="badge-count">3</span>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">A</div>
+                    <div class="user-info">
+                        <span class="username">Administrator</span>
+                        <span class="user-role">System Admin</span>
+                    </div>
+                </div>
             </div>
         </header>
 

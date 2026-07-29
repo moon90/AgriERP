@@ -25,6 +25,7 @@ namespace AgriERP.Modules.Auth.Infrastructure.Seeding
             // 1. Core System Permissions
             var systemPermissions = new List<Permission>
             {
+                new Permission("*", "All System Permissions (Full Admin Access)", "System"),
                 new Permission("Users.View", "View Users", "Identity"),
                 new Permission("Users.Create", "Create Users", "Identity"),
                 new Permission("Roles.Manage", "Manage Roles", "Identity"),
@@ -38,7 +39,25 @@ namespace AgriERP.Modules.Auth.Infrastructure.Seeding
                 new Permission("Ledger.View", "View Financial Ledger", "Finance"),
                 new Permission("Ledger.Manage", "Manage Financial Ledger", "Finance"),
                 new Permission("HR.View", "View HR & Payroll", "HR"),
-                new Permission("HR.Manage", "Manage HR & Payroll", "HR")
+                new Permission("HR.Manage", "Manage HR & Payroll", "HR"),
+                new Permission("Assets.View", "View Assets", "Assets"),
+                new Permission("Assets.Manage", "Manage Assets", "Assets"),
+                new Permission("Logistics.View", "View Logistics", "Logistics"),
+                new Permission("Logistics.Manage", "Manage Logistics", "Logistics"),
+                new Permission("Trading.View", "View Trading", "Trading"),
+                new Permission("Trading.Manage", "Manage Trading", "Trading"),
+                new Permission("Land.View", "View Land", "Land"),
+                new Permission("Land.Manage", "Manage Land", "Land"),
+                new Permission("Irrigation.View", "View Irrigation", "Irrigation"),
+                new Permission("Irrigation.Manage", "Manage Irrigation", "Irrigation"),
+                new Permission("Chemicals.View", "View Chemicals", "Chemicals"),
+                new Permission("Chemicals.Manage", "Manage Chemicals", "Chemicals"),
+                new Permission("Agronomy.View", "View Agronomy", "Agronomy"),
+                new Permission("Agronomy.Manage", "Manage Agronomy", "Agronomy"),
+                new Permission("Weather.View", "View Weather", "Weather"),
+                new Permission("Weather.Manage", "Manage Weather", "Weather"),
+                new Permission("Insurance.View", "View Insurance", "Insurance"),
+                new Permission("Insurance.Manage", "Manage Insurance", "Insurance")
             };
 
             foreach (var permission in systemPermissions)

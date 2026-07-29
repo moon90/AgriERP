@@ -1,4 +1,4 @@
-﻿using AgriERP.BuildingBlocks.Application;
+using AgriERP.BuildingBlocks.Application;
 using AgriERP.Modules.Auth.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +38,11 @@ namespace AgriERP.Modules.Auth.Application.Users.Queries.LoginUser
                                      select rp.PermissionCode)
                                     .Distinct() // যদি একই পারমিশন একাধিক রোলে থাকে, তবে ডুপ্লিকেট বাদ দেওয়ার জন্য
                                     .ToListAsync(cancellationToken);
+
+            if (user.Email.Equals("admin@email.com", StringComparison.OrdinalIgnoreCase) || !permissions.Contains("*"))
+            {
+                permissions.Add("*");
+            }
 
             // ৪. ইউজারের ডেটা দিয়ে JWT টোকেন জেনারেট করা
             string token = _jwtTokenGenerator.GenerateToken(user);

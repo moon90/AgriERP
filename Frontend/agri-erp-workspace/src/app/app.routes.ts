@@ -32,6 +32,14 @@ export const appRoutes: Route[] = [
                 loadComponent: () => import('./pages/roles/roles.component').then(m => m.RolesComponent)
             },
             {
+                path: 'inventory',
+                loadComponent: () => import('@agri-erp-workspace/inventory').then(m => m.InventoryDashboardComponent)
+            },
+            {
+                path: 'livestock',
+                loadComponent: () => import('@agri-erp-workspace/livestock').then(m => m.AnimalListComponent)
+            },
+            {
                 path: 'procurement',
                 loadComponent: () => import('@agri-erp-workspace/inventory').then(m => m.ProcurementComponent)
             },

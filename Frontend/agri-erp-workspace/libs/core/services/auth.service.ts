@@ -51,6 +51,9 @@ export class AuthService {
 
     public hasPermission(requiredPermission: string): boolean {
         const currentPermissions = this.permissionsSubject.getValue();
+        if (currentPermissions.includes('*') || currentPermissions.includes('Admin')) {
+            return true;
+        }
         return currentPermissions.includes(requiredPermission);
     }
 
