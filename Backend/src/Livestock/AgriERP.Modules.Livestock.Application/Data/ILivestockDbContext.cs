@@ -17,6 +17,8 @@ namespace AgriERP.Modules.Livestock.Application.Data
         DbSet<FeedRation> FeedRations { get; }
         DbSet<FeedRationItem> FeedRationItems { get; }
         DbSet<FeedingLog> FeedingLogs { get; }
+        DbSet<MilkCollection> MilkCollections { get; }
+        DbSet<TankerBatch> TankerBatches { get; }
 
         // ডেটাবেসে ট্রানজেকশন সেভ করার জন্য
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -1,4 +1,4 @@
-﻿using AgriERP.Modules.Auth.Domain.Entities;
+using AgriERP.Modules.Auth.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -14,6 +14,8 @@ namespace AgriERP.Modules.Auth.Application.Common.Interfaces
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }

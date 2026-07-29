@@ -56,5 +56,35 @@ namespace AgriERP.Modules.Irrigation.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("permits")]
+        public async Task<IActionResult> GetPermits(CancellationToken cancellationToken)
+        {
+            var permits = await _context.WaterPermits.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(permits);
+        }
+
+        [HttpPost("permits")]
+        public async Task<IActionResult> CreatePermit([FromBody] AgriERP.Modules.Irrigation.Domain.WaterPermit permit, CancellationToken cancellationToken)
+        {
+            _context.WaterPermits.Add(permit);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = permit.Id });
+        }
+
+        [HttpGet("pumping-logs")]
+        public async Task<IActionResult> GetPumpingLogs(CancellationToken cancellationToken)
+        {
+            var logs = await _context.PumpingLogs.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(logs);
+        }
+
+        [HttpPost("pumping-logs")]
+        public async Task<IActionResult> CreatePumpingLog([FromBody] AgriERP.Modules.Irrigation.Domain.PumpingLog log, CancellationToken cancellationToken)
+        {
+            _context.PumpingLogs.Add(log);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = log.Id });
+        }
     }
 }

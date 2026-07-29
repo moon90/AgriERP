@@ -14,6 +14,7 @@ namespace AgriERP.Modules.Weather.Infrastructure.Persistence
         public DbSet<WeatherReading> WeatherReadings { get; set; }
         public DbSet<FrostAlertConfig> FrostAlertConfigs { get; set; }
         public DbSet<WeatherSubscriptionBilling> WeatherSubscriptionBillings { get; set; }
+        public DbSet<GDDAccumulation> GDDAccumulations { get; set; }
 
         public WeatherDbContext(
             DbContextOptions<WeatherDbContext> options,
@@ -68,6 +69,14 @@ namespace AgriERP.Modules.Weather.Infrastructure.Persistence
                 entity.HasKey(e => e.Id);
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.Property(e => e.SubscriptionFee).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<GDDAccumulation>(entity =>
+            {
+                entity.ToTable("GDDAccumulations");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.CropFieldId);
             });
         }
     }

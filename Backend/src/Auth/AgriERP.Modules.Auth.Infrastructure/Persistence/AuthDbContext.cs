@@ -20,6 +20,8 @@ namespace AgriERP.Modules.Auth.Infrastructure.Persistence
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
         public AuthDbContext(DbContextOptions<AuthDbContext> options, ITenantProvider tenantProvider, IPublisher publisher, ICurrentUserProvider currentUserProvider) : base(options, tenantProvider, publisher, currentUserProvider)
         {
@@ -76,7 +78,22 @@ namespace AgriERP.Modules.Auth.Infrastructure.Persistence
             modelBuilder.Entity<RolePermission>(entity =>
             {
                 entity.ToTable("RolePermissions");
-                entity.HasKey(e => new { e.RoleId, e.PermissionCode }); // Composite Key
+                entity.HasKey(e => new { e.RoleId, e.PermissionCode });
+            });
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.ToTable("RefreshTokens");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.UserId);
+            });
+
+            modelBuilder.Entity<OutboxMessage>(entity =>
+            {
+                entity.ToTable("OutboxMessages");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.ProcessedOn);
             });
         }
     }

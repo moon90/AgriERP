@@ -12,6 +12,8 @@ namespace AgriERP.Modules.Assets.Infrastructure.Persistence
     {
         public DbSet<Asset> Assets { get; set; }
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
+        public DbSet<FuelLog> FuelLogs { get; set; }
+        public DbSet<DepreciationSchedule> DepreciationSchedules { get; set; }
 
         public AssetsDbContext(
             DbContextOptions<AssetsDbContext> options,
@@ -49,6 +51,27 @@ namespace AgriERP.Modules.Assets.Infrastructure.Persistence
                 entity.Property(e => e.Cost).HasPrecision(18, 2);
                 entity.Property(e => e.RuntimeHoursAtService).HasPrecision(18, 2);
                 entity.Property(e => e.OdometerKmAtService).HasPrecision(18, 2);
+                entity.HasIndex(e => e.AssetId);
+            });
+
+            modelBuilder.Entity<FuelLog>(entity =>
+            {
+                entity.ToTable("FuelLogs");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.Property(e => e.CostPerGallon).HasPrecision(18, 2);
+                entity.Property(e => e.TotalCost).HasPrecision(18, 2);
+                entity.HasIndex(e => e.AssetId);
+            });
+
+            modelBuilder.Entity<DepreciationSchedule>(entity =>
+            {
+                entity.ToTable("DepreciationSchedules");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.Property(e => e.SalvageValue).HasPrecision(18, 2);
+                entity.Property(e => e.DepreciationPerYear).HasPrecision(18, 2);
+                entity.Property(e => e.AccumulatedDepreciation).HasPrecision(18, 2);
                 entity.HasIndex(e => e.AssetId);
             });
         }

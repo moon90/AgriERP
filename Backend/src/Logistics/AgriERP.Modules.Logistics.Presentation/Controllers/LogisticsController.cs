@@ -64,5 +64,35 @@ namespace AgriERP.Modules.Logistics.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("silos")]
+        public async Task<IActionResult> GetSilos(CancellationToken cancellationToken)
+        {
+            var silos = await _context.Silos.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(silos);
+        }
+
+        [HttpPost("silos")]
+        public async Task<IActionResult> CreateSilo([FromBody] AgriERP.Modules.Logistics.Domain.Silo silo, CancellationToken cancellationToken)
+        {
+            _context.Silos.Add(silo);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = silo.Id });
+        }
+
+        [HttpGet("transfers")]
+        public async Task<IActionResult> GetTransfers(CancellationToken cancellationToken)
+        {
+            var transfers = await _context.ScaleTransfers.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(transfers);
+        }
+
+        [HttpPost("transfers")]
+        public async Task<IActionResult> CreateTransfer([FromBody] AgriERP.Modules.Logistics.Domain.ScaleTransfer transfer, CancellationToken cancellationToken)
+        {
+            _context.ScaleTransfers.Add(transfer);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = transfer.Id });
+        }
     }
 }

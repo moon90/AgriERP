@@ -72,5 +72,20 @@ namespace AgriERP.Modules.Weather.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("gdd-accumulations")]
+        public async Task<IActionResult> GetGDDAccumulations(CancellationToken cancellationToken)
+        {
+            var items = await _context.GDDAccumulations.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(items);
+        }
+
+        [HttpPost("gdd-accumulations")]
+        public async Task<IActionResult> CreateGDDAccumulation([FromBody] AgriERP.Modules.Weather.Domain.GDDAccumulation item, CancellationToken cancellationToken)
+        {
+            _context.GDDAccumulations.Add(item);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = item.Id });
+        }
     }
 }

@@ -56,5 +56,35 @@ namespace AgriERP.Modules.Land.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("parcels")]
+        public async Task<IActionResult> GetParcels(CancellationToken cancellationToken)
+        {
+            var parcels = await _context.Parcels.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(parcels);
+        }
+
+        [HttpPost("parcels")]
+        public async Task<IActionResult> CreateParcel([FromBody] AgriERP.Modules.Land.Domain.Parcel parcel, CancellationToken cancellationToken)
+        {
+            _context.Parcels.Add(parcel);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = parcel.Id });
+        }
+
+        [HttpGet("splits")]
+        public async Task<IActionResult> GetSplits(CancellationToken cancellationToken)
+        {
+            var splits = await _context.CropShareSplits.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(splits);
+        }
+
+        [HttpPost("splits")]
+        public async Task<IActionResult> CreateSplit([FromBody] AgriERP.Modules.Land.Domain.CropShareSplit split, CancellationToken cancellationToken)
+        {
+            _context.CropShareSplits.Add(split);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = split.Id });
+        }
     }
 }

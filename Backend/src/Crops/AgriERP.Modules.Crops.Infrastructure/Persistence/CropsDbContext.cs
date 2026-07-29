@@ -13,6 +13,8 @@ namespace AgriERP.Modules.Crops.Infrastructure.Persistence
         public DbSet<CropField> CropFields { get; set; }
         public DbSet<CropCycle> CropCycles { get; set; }
         public DbSet<FieldActivity> FieldActivities { get; set; }
+        public DbSet<FieldPlot> FieldPlots { get; set; }
+        public DbSet<HarvestRecord> HarvestRecords { get; set; }
 
         public CropsDbContext(
             DbContextOptions<CropsDbContext> options,
@@ -56,6 +58,22 @@ namespace AgriERP.Modules.Crops.Infrastructure.Persistence
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.Property(e => e.Cost).HasPrecision(18, 2);
                 entity.Property(e => e.InputQuantity).HasPrecision(18, 2);
+                entity.HasIndex(e => e.CropCycleId);
+            });
+
+            modelBuilder.Entity<FieldPlot>(entity =>
+            {
+                entity.ToTable("FieldPlots");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.CropFieldId);
+            });
+
+            modelBuilder.Entity<HarvestRecord>(entity =>
+            {
+                entity.ToTable("HarvestRecords");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.HasIndex(e => e.CropCycleId);
             });
         }

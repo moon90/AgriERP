@@ -64,5 +64,20 @@ namespace AgriERP.Modules.Insurance.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("adjustments")]
+        public async Task<IActionResult> GetAdjustments(CancellationToken cancellationToken)
+        {
+            var items = await _context.Adjustments.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(items);
+        }
+
+        [HttpPost("adjustments")]
+        public async Task<IActionResult> CreateAdjustment([FromBody] AgriERP.Modules.Insurance.Domain.Adjustment adjustment, CancellationToken cancellationToken)
+        {
+            _context.Adjustments.Add(adjustment);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = adjustment.Id });
+        }
     }
 }

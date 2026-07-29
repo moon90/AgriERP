@@ -12,6 +12,8 @@ namespace AgriERP.Modules.Chemicals.Infrastructure.Persistence
     {
         public DbSet<ChemicalProduct> ChemicalProducts { get; set; }
         public DbSet<ApplicationLog> ApplicationLogs { get; set; }
+        public DbSet<ActiveIngredient> ActiveIngredients { get; set; }
+        public DbSet<PHITimer> PHITimers { get; set; }
 
         public ChemicalsDbContext(
             DbContextOptions<ChemicalsDbContext> options,
@@ -48,6 +50,22 @@ namespace AgriERP.Modules.Chemicals.Infrastructure.Persistence
                 entity.Property(e => e.DosagePerAcre).HasPrecision(18, 2);
                 entity.HasIndex(e => e.ChemicalProductId);
                 entity.HasIndex(e => e.FieldId);
+            });
+
+            modelBuilder.Entity<ActiveIngredient>(entity =>
+            {
+                entity.ToTable("ActiveIngredients");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.ChemicalProductId);
+            });
+
+            modelBuilder.Entity<PHITimer>(entity =>
+            {
+                entity.ToTable("PHITimers");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.ApplicationLogId);
+                entity.HasIndex(e => e.CropFieldId);
             });
         }
     }

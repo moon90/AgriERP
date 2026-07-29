@@ -11,6 +11,7 @@ namespace AgriERP.Modules.Weather.Application.Common
         DbSet<WeatherReading> WeatherReadings { get; }
         DbSet<FrostAlertConfig> FrostAlertConfigs { get; }
         DbSet<WeatherSubscriptionBilling> WeatherSubscriptionBillings { get; }
+        DbSet<GDDAccumulation> GDDAccumulations { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

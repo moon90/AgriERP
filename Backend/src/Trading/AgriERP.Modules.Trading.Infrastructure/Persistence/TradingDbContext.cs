@@ -12,6 +12,8 @@ namespace AgriERP.Modules.Trading.Infrastructure.Persistence
     {
         public DbSet<SalesContract> SalesContracts { get; set; }
         public DbSet<HedgingPosition> HedgingPositions { get; set; }
+        public DbSet<DeliveryFulfillment> DeliveryFulfillments { get; set; }
+        public DbSet<MarginCall> MarginCalls { get; set; }
 
         public TradingDbContext(
             DbContextOptions<TradingDbContext> options,
@@ -48,6 +50,23 @@ namespace AgriERP.Modules.Trading.Infrastructure.Persistence
                 entity.Property(e => e.ExitPricePerTon).HasPrecision(18, 2);
                 entity.Property(e => e.CurrentMarketPricePerTon).HasPrecision(18, 2);
                 entity.Property(e => e.RealizedPnl).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<DeliveryFulfillment>(entity =>
+            {
+                entity.ToTable("DeliveryFulfillments");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.SalesContractId);
+            });
+
+            modelBuilder.Entity<MarginCall>(entity =>
+            {
+                entity.ToTable("MarginCalls");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.Property(e => e.RequiredAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.HedgingPositionId);
             });
         }
     }

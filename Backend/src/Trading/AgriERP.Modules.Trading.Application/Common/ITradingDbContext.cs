@@ -9,6 +9,8 @@ namespace AgriERP.Modules.Trading.Application.Common
     {
         DbSet<SalesContract> SalesContracts { get; }
         DbSet<HedgingPosition> HedgingPositions { get; }
+        DbSet<DeliveryFulfillment> DeliveryFulfillments { get; }
+        DbSet<MarginCall> MarginCalls { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

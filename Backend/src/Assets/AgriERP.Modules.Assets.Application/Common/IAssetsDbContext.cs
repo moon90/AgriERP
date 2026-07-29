@@ -9,6 +9,8 @@ namespace AgriERP.Modules.Assets.Application.Common
     {
         DbSet<Asset> Assets { get; }
         DbSet<MaintenanceLog> MaintenanceLogs { get; }
+        DbSet<FuelLog> FuelLogs { get; }
+        DbSet<DepreciationSchedule> DepreciationSchedules { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

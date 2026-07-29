@@ -13,6 +13,8 @@ namespace AgriERP.Modules.Logistics.Infrastructure.Persistence
         public DbSet<Elevator> Elevators { get; set; }
         public DbSet<WeighbridgeTicket> WeighbridgeTickets { get; set; }
         public DbSet<StorageCharge> StorageCharges { get; set; }
+        public DbSet<Silo> Silos { get; set; }
+        public DbSet<ScaleTransfer> ScaleTransfers { get; set; }
 
         public LogisticsDbContext(
             DbContextOptions<LogisticsDbContext> options,
@@ -61,6 +63,21 @@ namespace AgriERP.Modules.Logistics.Infrastructure.Persistence
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.Property(e => e.TotalCharge).HasPrecision(18, 2);
                 entity.HasIndex(e => e.WeighbridgeTicketId);
+            });
+
+            modelBuilder.Entity<Silo>(entity =>
+            {
+                entity.ToTable("Silos");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.ElevatorId);
+            });
+
+            modelBuilder.Entity<ScaleTransfer>(entity =>
+            {
+                entity.ToTable("ScaleTransfers");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
             });
         }
     }

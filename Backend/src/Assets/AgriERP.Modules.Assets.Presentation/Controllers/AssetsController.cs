@@ -74,5 +74,35 @@ namespace AgriERP.Modules.Assets.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("fuel-logs")]
+        public async Task<IActionResult> GetFuelLogs(CancellationToken cancellationToken)
+        {
+            var logs = await _context.FuelLogs.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(logs);
+        }
+
+        [HttpPost("fuel-logs")]
+        public async Task<IActionResult> CreateFuelLog([FromBody] AgriERP.Modules.Assets.Domain.FuelLog log, CancellationToken cancellationToken)
+        {
+            _context.FuelLogs.Add(log);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = log.Id });
+        }
+
+        [HttpGet("depreciation-schedules")]
+        public async Task<IActionResult> GetAllDepreciationSchedules(CancellationToken cancellationToken)
+        {
+            var schedules = await _context.DepreciationSchedules.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(schedules);
+        }
+
+        [HttpPost("depreciation-schedules")]
+        public async Task<IActionResult> CreateDepreciationSchedule([FromBody] AgriERP.Modules.Assets.Domain.DepreciationSchedule schedule, CancellationToken cancellationToken)
+        {
+            _context.DepreciationSchedules.Add(schedule);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = schedule.Id });
+        }
     }
 }

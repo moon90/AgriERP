@@ -13,6 +13,8 @@ namespace AgriERP.Modules.Irrigation.Infrastructure.Persistence
         public DbSet<WaterSource> WaterSources { get; set; }
         public DbSet<IrrigationLog> IrrigationLogs { get; set; }
         public DbSet<WaterUsageBilling> WaterUsageBillings { get; set; }
+        public DbSet<WaterPermit> WaterPermits { get; set; }
+        public DbSet<PumpingLog> PumpingLogs { get; set; }
 
         public IrrigationDbContext(
             DbContextOptions<IrrigationDbContext> options,
@@ -58,6 +60,22 @@ namespace AgriERP.Modules.Irrigation.Infrastructure.Persistence
                 entity.Property(e => e.GallonsUsed).HasPrecision(18, 2);
                 entity.Property(e => e.CostPerGallon).HasPrecision(18, 4);
                 entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.WaterSourceId);
+            });
+
+            modelBuilder.Entity<WaterPermit>(entity =>
+            {
+                entity.ToTable("WaterPermits");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.WaterSourceId);
+            });
+
+            modelBuilder.Entity<PumpingLog>(entity =>
+            {
+                entity.ToTable("PumpingLogs");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.HasIndex(e => e.WaterSourceId);
             });
         }

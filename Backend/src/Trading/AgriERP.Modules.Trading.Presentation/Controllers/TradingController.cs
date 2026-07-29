@@ -72,5 +72,35 @@ namespace AgriERP.Modules.Trading.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("deliveries")]
+        public async Task<IActionResult> GetDeliveries(CancellationToken cancellationToken)
+        {
+            var items = await _context.DeliveryFulfillments.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(items);
+        }
+
+        [HttpPost("deliveries")]
+        public async Task<IActionResult> CreateDelivery([FromBody] AgriERP.Modules.Trading.Domain.DeliveryFulfillment fulfillment, CancellationToken cancellationToken)
+        {
+            _context.DeliveryFulfillments.Add(fulfillment);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = fulfillment.Id });
+        }
+
+        [HttpGet("margin-calls")]
+        public async Task<IActionResult> GetMarginCalls(CancellationToken cancellationToken)
+        {
+            var calls = await _context.MarginCalls.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(calls);
+        }
+
+        [HttpPost("margin-calls")]
+        public async Task<IActionResult> CreateMarginCall([FromBody] AgriERP.Modules.Trading.Domain.MarginCall call, CancellationToken cancellationToken)
+        {
+            _context.MarginCalls.Add(call);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = call.Id });
+        }
     }
 }

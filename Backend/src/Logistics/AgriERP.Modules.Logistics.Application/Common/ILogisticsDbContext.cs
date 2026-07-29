@@ -10,6 +10,8 @@ namespace AgriERP.Modules.Logistics.Application.Common
         DbSet<Elevator> Elevators { get; }
         DbSet<WeighbridgeTicket> WeighbridgeTickets { get; }
         DbSet<StorageCharge> StorageCharges { get; }
+        DbSet<Silo> Silos { get; }
+        DbSet<ScaleTransfer> ScaleTransfers { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

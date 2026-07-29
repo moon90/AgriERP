@@ -10,6 +10,8 @@ namespace AgriERP.Modules.Irrigation.Application.Common
         DbSet<WaterSource> WaterSources { get; }
         DbSet<IrrigationLog> IrrigationLogs { get; }
         DbSet<WaterUsageBilling> WaterUsageBillings { get; }
+        DbSet<WaterPermit> WaterPermits { get; }
+        DbSet<PumpingLog> PumpingLogs { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

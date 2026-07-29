@@ -98,6 +98,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
 
+// Response Caching & Memory Caching
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
+
 // 2. Distributed Caching support for Permission Caching
 builder.Services.AddDistributedMemoryCache();
 
@@ -207,7 +211,7 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddEnterpriseRateLimiting();
 
 var app = builder.Build();
 
@@ -222,10 +226,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<AgriERP.Api.Infrastructure.SecurityHeadersMiddleware>();
+app.UseMiddleware<AgriERP.Api.Infrastructure.IdempotencyMiddleware>();
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("Angular");
+app.UseResponseCaching();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

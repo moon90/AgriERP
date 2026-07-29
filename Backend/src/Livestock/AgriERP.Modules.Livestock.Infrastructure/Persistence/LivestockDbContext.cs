@@ -18,6 +18,8 @@ namespace AgriERP.Modules.Livestock.Infrastructure.Persistence
         public DbSet<FeedRation> FeedRations { get; set; }
         public DbSet<FeedRationItem> FeedRationItems { get; set; }
         public DbSet<FeedingLog> FeedingLogs { get; set; }
+        public DbSet<MilkCollection> MilkCollections { get; set; }
+        public DbSet<TankerBatch> TankerBatches { get; set; }
 
         public LivestockDbContext(DbContextOptions<LivestockDbContext> options, ITenantProvider tenantProvider, IPublisher publisher, ICurrentUserProvider currentUserProvider) : base(options, tenantProvider, publisher, currentUserProvider)
         {
@@ -109,6 +111,21 @@ namespace AgriERP.Modules.Livestock.Infrastructure.Persistence
                 entity.ToTable("FeedingLogs");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.QuantityFed).HasPrecision(18, 4);
+                entity.HasQueryFilter(e => e.TenantId == CurrentTenantId);
+            });
+
+            modelBuilder.Entity<MilkCollection>(entity =>
+            {
+                entity.ToTable("MilkCollections");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(e => e.TenantId == CurrentTenantId);
+                entity.HasIndex(e => e.AnimalId);
+            });
+
+            modelBuilder.Entity<TankerBatch>(entity =>
+            {
+                entity.ToTable("TankerBatches");
+                entity.HasKey(e => e.Id);
                 entity.HasQueryFilter(e => e.TenantId == CurrentTenantId);
             });
         }

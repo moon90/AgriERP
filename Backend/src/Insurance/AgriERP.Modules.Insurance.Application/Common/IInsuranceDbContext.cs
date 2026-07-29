@@ -10,6 +10,7 @@ namespace AgriERP.Modules.Insurance.Application.Common
         DbSet<InsurancePolicy> InsurancePolicies { get; }
         DbSet<LossClaim> LossClaims { get; }
         DbSet<InsurancePremiumBilling> InsurancePremiumBillings { get; }
+        DbSet<Adjustment> Adjustments { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

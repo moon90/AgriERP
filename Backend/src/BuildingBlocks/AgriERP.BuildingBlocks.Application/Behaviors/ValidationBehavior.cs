@@ -1,9 +1,9 @@
-﻿using FluentValidation;
+using FluentValidation;
 using MediatR;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AgriERP.BuildingBlocks.Application.Behaviors
 {
@@ -21,27 +21,24 @@ namespace AgriERP.BuildingBlocks.Application.Behaviors
         {
             if (!_validators.Any())
             {
-                return await next(); // কোনো ভ্যালিডেটর না থাকলে সোজা হ্যান্ডলারে চলে যাবে
+                return await next();
             }
 
             var context = new ValidationContext<TRequest>(request);
-
-            // সবগুলো ভ্যালিডেটর রান করানো
             var validationResults = await Task.WhenAll(
-                _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+                _validators.Select(v => v.ValidateAsync(context, cancellationToken))
+            );
 
             var failures = validationResults
-                .Where(r => r.Errors.Any())
                 .SelectMany(r => r.Errors)
+                .Where(f => f != null)
                 .ToList();
 
             if (failures.Any())
             {
-                // যদি এরর থাকে, তবে কাস্টম Exception থ্রো করবে
-                throw new FluentValidation.ValidationException(failures);
+                throw new ValidationException(failures);
             }
 
-            // সব ঠিক থাকলে আসল হ্যান্ডলারে রিকোয়েস্ট পাস করে দেবে
             return await next();
         }
     }

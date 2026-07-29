@@ -74,7 +74,15 @@ import { CropsService, CropField, CropCycle } from './crops.service';
 
         <!-- Tab 1: Field Directory -->
         <div *ngIf="activeTab === 'fields'">
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <!-- Search & Filter Controls -->
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <input type="text" [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="🔍 Search field name..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; min-width: 220px;" />
+              <button (click)="toggleSort()" style="padding: 8px 12px; background: #eef2f5; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                Sort: {{ sortOrder === 'asc' ? 'A ➔ Z ▲' : 'Z ➔ A ▼' }}
+              </button>
+            </div>
+
             <button (click)="showFieldForm = !showFieldForm" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
               {{ showFieldForm ? 'Close Form' : '➕ Add Field Plot' }}
             </button>
@@ -424,6 +432,14 @@ export class CropsComponent implements OnInit {
     cycles: CropCycle[] = [];
     selectedCycle?: CropCycle;
 
+    // Pagination & Search state
+    searchTerm: string = '';
+    sortOrder: 'asc' | 'desc' = 'asc';
+    pageNumber: number = 1;
+    pageSize: number = 5;
+    totalCount: number = 0;
+    totalPages: number = 1;
+
     // Form triggers
     showFieldForm: boolean = false;
     showCycleForm: boolean = false;
@@ -441,10 +457,17 @@ export class CropsComponent implements OnInit {
     }
 
     loadAll(): void {
-        this.cropsService.getFields().subscribe(f => {
-            this.fields = f;
-            if (f.length > 0) {
-                this.newCycle.fieldId = f[0].id;
+        this.cropsService.getFieldsPaged({
+            pageNumber: this.pageNumber,
+            pageSize: this.pageSize,
+            search: this.searchTerm,
+            sortOrder: this.sortOrder
+        }).subscribe(res => {
+            this.fields = res.items;
+            this.totalCount = res.totalCount;
+            this.totalPages = res.totalPages;
+            if (res.items.length > 0) {
+                this.newCycle.fieldId = res.items[0].id;
             }
             this.cdr.detectChanges();
         });
@@ -457,6 +480,30 @@ export class CropsComponent implements OnInit {
             }
             this.cdr.detectChanges();
         });
+    }
+
+    onSearchChange(): void {
+        this.pageNumber = 1;
+        this.loadAll();
+    }
+
+    toggleSort(): void {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        this.loadAll();
+    }
+
+    prevPage(): void {
+        if (this.pageNumber > 1) {
+            this.pageNumber--;
+            this.loadAll();
+        }
+    }
+
+    nextPage(): void {
+        if (this.pageNumber < this.totalPages) {
+            this.pageNumber++;
+            this.loadAll();
+        }
     }
 
     submitField(): void {

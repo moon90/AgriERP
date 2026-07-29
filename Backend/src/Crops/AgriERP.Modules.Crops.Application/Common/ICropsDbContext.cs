@@ -10,6 +10,8 @@ namespace AgriERP.Modules.Crops.Application.Common
         DbSet<CropField> CropFields { get; }
         DbSet<CropCycle> CropCycles { get; }
         DbSet<FieldActivity> FieldActivities { get; }
+        DbSet<FieldPlot> FieldPlots { get; }
+        DbSet<HarvestRecord> HarvestRecords { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

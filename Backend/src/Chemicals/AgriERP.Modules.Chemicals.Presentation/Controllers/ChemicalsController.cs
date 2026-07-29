@@ -56,5 +56,35 @@ namespace AgriERP.Modules.Chemicals.Presentation.Controllers
             var result = await _sender.Send(query, cancellationToken);
             return Ok(result);
         }
+
+        [HttpGet("active-ingredients")]
+        public async Task<IActionResult> GetActiveIngredients(CancellationToken cancellationToken)
+        {
+            var ingredients = await _context.ActiveIngredients.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(ingredients);
+        }
+
+        [HttpPost("active-ingredients")]
+        public async Task<IActionResult> CreateActiveIngredient([FromBody] AgriERP.Modules.Chemicals.Domain.ActiveIngredient ingredient, CancellationToken cancellationToken)
+        {
+            _context.ActiveIngredients.Add(ingredient);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = ingredient.Id });
+        }
+
+        [HttpGet("phi-timers")]
+        public async Task<IActionResult> GetPHITimers(CancellationToken cancellationToken)
+        {
+            var timers = await _context.PHITimers.AsNoTracking().ToListAsync(cancellationToken);
+            return Ok(timers);
+        }
+
+        [HttpPost("phi-timers")]
+        public async Task<IActionResult> CreatePHITimer([FromBody] AgriERP.Modules.Chemicals.Domain.PHITimer timer, CancellationToken cancellationToken)
+        {
+            _context.PHITimers.Add(timer);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { Success = true, Id = timer.Id });
+        }
     }
 }

@@ -9,6 +9,8 @@ namespace AgriERP.Modules.Chemicals.Application.Common
     {
         DbSet<ChemicalProduct> ChemicalProducts { get; }
         DbSet<ApplicationLog> ApplicationLogs { get; }
+        DbSet<ActiveIngredient> ActiveIngredients { get; }
+        DbSet<PHITimer> PHITimers { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

@@ -12,6 +12,8 @@ namespace AgriERP.Modules.Land.Infrastructure.Persistence
     {
         public DbSet<LandLease> LandLeases { get; set; }
         public DbSet<LeasePayment> LeasePayments { get; set; }
+        public DbSet<Parcel> Parcels { get; set; }
+        public DbSet<CropShareSplit> CropShareSplits { get; set; }
 
         public LandDbContext(
             DbContextOptions<LandDbContext> options,
@@ -45,6 +47,22 @@ namespace AgriERP.Modules.Land.Infrastructure.Persistence
                 entity.HasKey(e => e.Id);
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.LandLeaseId);
+            });
+
+            modelBuilder.Entity<Parcel>(entity =>
+            {
+                entity.ToTable("Parcels");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.HasIndex(e => new { e.TenantId, e.ParcelNumber }).IsUnique();
+            });
+
+            modelBuilder.Entity<CropShareSplit>(entity =>
+            {
+                entity.ToTable("CropShareSplits");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.HasIndex(e => e.LandLeaseId);
             });
         }

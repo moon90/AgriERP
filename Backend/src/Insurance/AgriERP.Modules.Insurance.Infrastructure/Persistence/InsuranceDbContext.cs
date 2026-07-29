@@ -13,6 +13,7 @@ namespace AgriERP.Modules.Insurance.Infrastructure.Persistence
         public DbSet<InsurancePolicy> InsurancePolicies { get; set; }
         public DbSet<LossClaim> LossClaims { get; set; }
         public DbSet<InsurancePremiumBilling> InsurancePremiumBillings { get; set; }
+        public DbSet<Adjustment> Adjustments { get; set; }
 
         public InsuranceDbContext(
             DbContextOptions<InsuranceDbContext> options,
@@ -27,7 +28,6 @@ namespace AgriERP.Modules.Insurance.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
 
-            // Set Schema Boundary
             modelBuilder.HasDefaultSchema("insurance");
 
             modelBuilder.Entity<InsurancePolicy>(entity =>
@@ -57,6 +57,16 @@ namespace AgriERP.Modules.Insurance.Infrastructure.Persistence
                 entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
                 entity.Property(e => e.PremiumFee).HasPrecision(18, 2);
                 entity.HasIndex(e => e.InsurancePolicyId);
+            });
+
+            modelBuilder.Entity<Adjustment>(entity =>
+            {
+                entity.ToTable("Adjustments");
+                entity.HasKey(e => e.Id);
+                entity.HasQueryFilter(x => x.TenantId == CurrentTenantId);
+                entity.Property(e => e.AssessedLossAmount).HasPrecision(18, 2);
+                entity.Property(e => e.SettlementAmount).HasPrecision(18, 2);
+                entity.HasIndex(e => e.LossClaimId);
             });
         }
     }
