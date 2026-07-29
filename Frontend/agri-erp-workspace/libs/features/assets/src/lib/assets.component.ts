@@ -8,93 +8,60 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 3rem;">
+    <div style="font-family: var(--font-sans); color: var(--text-main);">
       
       <!-- Top Title Header -->
-      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 1rem;">
         <div>
-          <h3 style="color: #2c3e50; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">Asset, Fleet & Equipment Maintenance</h3>
-          <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Onboard agricultural machinery, view run hour metrics, schedule repairs, and calculate straight-line depreciation.</p>
+          <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">Asset, Fleet & Equipment Maintenance</h3>
+          <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Onboard agricultural machinery, view run hour metrics, schedule repairs, and calculate straight-line depreciation.</p>
         </div>
-        <button (click)="loadAll()" style="padding: 8px 16px; background: #34495e; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+        <button (click)="loadAll()" class="btn-secondary">
           🔄 Refresh Directory
         </button>
       </div>
 
       <!-- Tab Buttons Navigation -->
-      <div style="display: flex; gap: 1rem; border-bottom: 2px solid #eef2f5; padding-bottom: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap;">
-        <button (click)="activeTab = 'directory'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'directory' ? '#3498db' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'directory' ? '3px solid #3498db' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
+      <div style="display: flex; gap: 0.75rem; border-bottom: 1px solid var(--border-glass); margin-bottom: 1.5rem; padding-bottom: 2px; flex-wrap: wrap;">
+        <button (click)="activeTab = 'directory'" [style.border-bottom]="activeTab === 'directory' ? '3px solid var(--accent-blue)' : 'none'" [style.color]="activeTab === 'directory' ? 'var(--accent-blue)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
           🚜 Asset Directory
         </button>
         
-        <button (click)="activeTab = 'maintenance'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'maintenance' ? '#e67e22' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'maintenance' ? '3px solid #e67e22' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
+        <button (click)="activeTab = 'maintenance'" [style.border-bottom]="activeTab === 'maintenance' ? '3px solid var(--accent-amber)' : 'none'" [style.color]="activeTab === 'maintenance' ? 'var(--accent-amber)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
           🔧 Repair & Service Logs
         </button>
         
-        <button (click)="activeTab = 'depreciation'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'depreciation' ? '#9b59b6' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'depreciation' ? '3px solid #9b59b6' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
+        <button (click)="activeTab = 'depreciation'" [style.border-bottom]="activeTab === 'depreciation' ? '3px solid var(--accent-purple)' : 'none'" [style.color]="activeTab === 'depreciation' ? 'var(--accent-purple)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
           📈 Depreciation Ledger
         </button>
       </div>
 
       <!-- Tab Content Area -->
-      <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5; padding: 1.5rem;">
+      <div style="background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-glass); padding: 1.5rem;">
 
         <!-- Tab 1: Asset Directory -->
         <div *ngIf="activeTab === 'directory'">
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
-            <button (click)="showAssetForm = !showAssetForm" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-              {{ showAssetForm ? 'Close Registration Form' : '➕ Onboard New Asset' }}
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.25rem;">
+            <button (click)="showAssetForm = !showAssetForm" class="btn-primary">
+              {{ showAssetForm ? 'Close Form' : '➕ Onboard New Asset' }}
             </button>
           </div>
 
           <!-- Add Asset Form -->
-          <div *ngIf="showAssetForm" style="background: #edf7fd; border: 1px solid #b3e5fc; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 5px solid #3498db;">
-            <h4 style="margin: 0 0 1.25rem 0; color: #0288d1; font-size: 1.1rem;">Register Fleet or Machinery Asset</h4>
+          <div *ngIf="showAssetForm" style="background: rgba(15, 23, 42, 0.8); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass-light); margin-bottom: 2rem; border-left: 4px solid var(--accent-blue);">
+            <h4 style="margin: 0 0 1.25rem 0; color: #ffffff; font-size: 1.1rem;">Register Fleet or Machinery Asset</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Asset Name</label>
-                <input type="text" [(ngModel)]="newAsset.name" placeholder="e.g. John Deere Tractor 5075E" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Asset Name</label>
+                <input type="text" [(ngModel)]="newAsset.name" placeholder="e.g. John Deere Tractor 5075E" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Asset Code/Number</label>
-                <input type="text" [(ngModel)]="newAsset.assetNumber" placeholder="e.g. EQ-TRACT-09" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Asset Code/Number</label>
+                <input type="text" [(ngModel)]="newAsset.assetNumber" placeholder="e.g. EQ-TRACT-09" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Asset Category</label>
-                <select [(ngModel)]="newAsset.category" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Asset Category</label>
+                <select [(ngModel)]="newAsset.category" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;">
                   <option value="Tractor">Tractor / Field Machinery</option>
                   <option value="Harvester">Harvester / Combine</option>
                   <option value="Irrigation">Irrigation / Water Systems</option>
@@ -103,75 +70,68 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
                 </select>
               </div>
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Purchase Date</label>
-                <input type="date" [(ngModel)]="newAsset.purchaseDate" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Purchase Date</label>
+                <input type="date" [(ngModel)]="newAsset.purchaseDate" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Purchase Price ($)</label>
-                <input type="number" [(ngModel)]="newAsset.purchasePrice" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Purchase Price ($)</label>
+                <input type="number" [(ngModel)]="newAsset.purchasePrice" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Useful Life (Months)</label>
-                <input type="number" [(ngModel)]="newAsset.usefulLifeMonths" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Useful Life (Months)</label>
+                <input type="number" [(ngModel)]="newAsset.usefulLifeMonths" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
             </div>
             <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-              <button (click)="submitAsset()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+              <button (click)="submitAsset()" class="btn-primary">
                 Save Asset & Initialize
               </button>
             </div>
           </div>
 
           <!-- Assets Card Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-            <div *ngFor="let asset of assets" style="background: #ffffff; border: 1px solid #eef2f5; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border-top: 4px solid #3498db; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+            <div *ngFor="let asset of assets" style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 12px; padding: 1.25rem; border-top: 4px solid var(--accent-blue); display: flex; flex-direction: column; justify-content: space-between;">
               <div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                   <div>
-                    <h4 style="margin: 0; color: #2c3e50; font-size: 1.1rem; font-weight: 700;">{{ asset.name }}</h4>
-                    <span style="font-size: 0.8rem; color: #7f8c8d; font-family: monospace;">No: {{ asset.assetNumber }} | {{ asset.category }}</span>
+                    <h4 style="margin: 0; color: #ffffff; font-size: 1.1rem; font-weight: 700;">{{ asset.name }}</h4>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">No: {{ asset.assetNumber }} | {{ asset.category }}</span>
                   </div>
-                  <span [ngStyle]="{
-                    'background-color': getStatusColor(asset.status),
-                    'color': 'white',
-                    'padding': '3px 8px',
-                    'border-radius': '4px',
-                    'font-size': '0.75rem',
-                    'font-weight': 'bold'
-                  }">
+                  <span [ngClass]="asset.status === 'Active' ? 'badge-pill badge-emerald' : 'badge-pill badge-amber'">
                     {{ asset.status }}
                   </span>
                 </div>
 
                 <!-- Metrics Rows -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: #f8fafc; padding: 8px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; color: #34495e;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-main);">
                   <div>⚙️ Hours: <strong>{{ asset.currentRuntimeHours | number:'1.1-1' }} hrs</strong></div>
                   <div>🛣️ Odometer: <strong>{{ asset.currentOdometerKm | number:'1.0-0' }} km</strong></div>
                 </div>
 
                 <!-- Financial Row -->
-                <div style="font-size: 0.85rem; color: #34495e; line-height: 1.5; margin-bottom: 1rem;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;">
                   <div>📅 Purchase: <strong>{{ asset.purchaseDate | date:'mediumDate' }}</strong></div>
-                  <div>💰 Price: <strong>{{ asset.purchasePrice | currency:'USD' }}</strong></div>
-                  <div>📉 Book Value: <strong>{{ (asset.purchasePrice - asset.accumulatedDepreciation) | currency:'USD' }}</strong></div>
+                  <div>💰 Price: <strong style="color: #ffffff;">{{ asset.purchasePrice | currency:'USD' }}</strong></div>
+                  <div>📉 Book Value: <strong style="color: var(--primary-emerald);">{{ (asset.purchasePrice - asset.accumulatedDepreciation) | currency:'USD' }}</strong></div>
                 </div>
               </div>
 
               <!-- Depreciation Progress -->
               <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.25rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">
                   <span>Depreciated: {{ (asset.accumulatedDepreciation / asset.purchasePrice) * 100 | number:'1.0-0' }}%</span>
-                  <span>Life remaining: {{ asset.remainingLifeMonths }} / {{ asset.usefulLifeMonths }} mos</span>
+                  <span>Life: {{ asset.remainingLifeMonths }} / {{ asset.usefulLifeMonths }} mos</span>
                 </div>
-                <div style="background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
-                  <div [style.width.%]="(asset.accumulatedDepreciation / asset.purchasePrice) * 100" style="background-color: #9b59b6; height: 100%;"></div>
+                <div style="background: rgba(15, 23, 42, 0.6); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--border-glass);">
+                  <div [style.width.%]="(asset.accumulatedDepreciation / asset.purchasePrice) * 100" style="background: var(--accent-purple); height: 100%;"></div>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                  <button (click)="selectAsset(asset, 'maintenance')" style="padding: 5px 10px; background: #e67e22; color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">
+                  <button (click)="selectAsset(asset, 'maintenance')" class="badge-pill badge-amber" style="cursor: pointer; border: none;">
                     🔧 Log Service
                   </button>
-                  <button (click)="selectAsset(asset, 'depreciation')" style="padding: 5px 10px; background: #9b59b6; color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">
+                  <button (click)="selectAsset(asset, 'depreciation')" class="badge-pill badge-purple" style="cursor: pointer; border: none;">
                     📈 View Schedule
                   </button>
                 </div>
@@ -179,32 +139,32 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
 
             </div>
           </div>
-          <div *ngIf="assets.length === 0" style="padding: 3rem; text-align: center; color: #95a5a6;">
+          <div *ngIf="assets.length === 0" style="padding: 3rem; text-align: center; color: var(--text-muted);">
             No assets registered. Onboard tractor, fleet or machinery assets above.
           </div>
         </div>
 
         <!-- Tab 2: Repair & Maintenance Logs -->
         <div *ngIf="activeTab === 'maintenance'">
-          <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem;">
+          <div style="display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem;">
             
             <!-- Left Picker Column -->
-            <div style="border-right: 1px solid #eef2f5; padding-right: 1.5rem;">
-              <h4 style="margin: 0 0 1rem 0; color: #2c3e50;">Select Asset</h4>
+            <div style="border-right: 1px solid var(--border-glass); padding-right: 1.25rem;">
+              <h4 style="margin: 0 0 1rem 0; color: #ffffff;">Select Asset</h4>
               <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 450px; overflow-y: auto;">
                 <div *ngFor="let asset of assets" 
                      (click)="setSelectedAsset(asset)"
                      [ngStyle]="{
-                       'padding': '10px',
+                       'padding': '10px 14px',
                        'border': '1px solid',
-                       'border-color': selectedAsset?.id === asset.id ? '#e67e22' : '#eef2f5',
-                       'border-radius': '6px',
+                       'border-color': selectedAsset?.id === asset.id ? 'var(--accent-amber)' : 'var(--border-glass)',
+                       'border-radius': '10px',
                        'cursor': 'pointer',
-                       'background-color': selectedAsset?.id === asset.id ? '#fdf6f0' : 'transparent',
+                       'background': selectedAsset?.id === asset.id ? 'rgba(245, 158, 11, 0.15)' : 'rgba(30, 41, 59, 0.6)',
                        'transition': 'all 0.2s'
                      }">
-                  <strong style="display: block; font-size: 0.9rem; color: #2c3e50;">{{ asset.name }}</strong>
-                  <span style="font-size: 0.75rem; color: #7f8c8d; font-family: monospace;">No: {{ asset.assetNumber }}</span>
+                  <strong style="display: block; font-size: 0.9rem; color: #ffffff;">{{ asset.name }}</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">No: {{ asset.assetNumber }}</span>
                 </div>
               </div>
             </div>
@@ -212,50 +172,50 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
             <!-- Right Content Log/Form Column -->
             <div>
               <div *ngIf="selectedAsset">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #f8f9fa; padding-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
                   <div>
-                    <h3 style="margin: 0; color: #e67e22;">🔧 Service logs for {{ selectedAsset.name }}</h3>
-                    <span style="font-size: 0.85rem; color: #7f8c8d;">Status: {{ selectedAsset.status }} | Current counters: {{ selectedAsset.currentRuntimeHours }} hrs / {{ selectedAsset.currentOdometerKm }} km</span>
+                    <h3 style="margin: 0; color: var(--accent-amber);">🔧 Service logs for {{ selectedAsset.name }}</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Status: {{ selectedAsset.status }} | Counters: {{ selectedAsset.currentRuntimeHours }} hrs / {{ selectedAsset.currentOdometerKm }} km</span>
                   </div>
-                  <button (click)="showLogForm = !showLogForm" style="padding: 6px 12px; background: #e67e22; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">
+                  <button (click)="showLogForm = !showLogForm" class="btn-primary">
                     {{ showLogForm ? 'Close form' : '➕ Log service entry' }}
                   </button>
                 </div>
 
                 <!-- Add Log Form -->
-                <div *ngIf="showLogForm" style="background: #fdfaf7; border: 1px solid #f5cba7; border-left: 5px solid #e67e22; padding: 1.25rem; border-radius: 8px; margin-bottom: 2rem;">
-                  <h4 style="margin: 0 0 1rem 0; color: #d35400;">Log Preventative Maintenance / Repair</h4>
+                <div *ngIf="showLogForm" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-glass-light); border-left: 4px solid var(--accent-amber); padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem;">
+                  <h4 style="margin: 0 0 1rem 0; color: #ffffff;">Log Preventative Maintenance / Repair</h4>
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Service Type</label>
-                      <input type="text" [(ngModel)]="newLog.serviceType" placeholder="e.g. Oil Change, Motor Repair" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Service Type</label>
+                      <input type="text" [(ngModel)]="newLog.serviceType" placeholder="e.g. Oil Change, Motor Repair" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Service Date</label>
-                      <input type="date" [(ngModel)]="newLog.serviceDate" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Service Date</label>
+                      <input type="date" [(ngModel)]="newLog.serviceDate" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Service Cost ($)</label>
-                      <input type="number" [(ngModel)]="newLog.cost" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Service Cost ($)</label>
+                      <input type="number" [(ngModel)]="newLog.cost" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Performed By</label>
-                      <input type="text" [(ngModel)]="newLog.performedBy" placeholder="e.g. Internal mechanic, Dealership" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Performed By</label>
+                      <input type="text" [(ngModel)]="newLog.performedBy" placeholder="e.g. Internal mechanic" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Odometer (KM)</label>
-                      <input type="number" [(ngModel)]="newLog.odometer" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Odometer (KM)</label>
+                      <input type="number" [(ngModel)]="newLog.odometer" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Run Hours (Hrs)</label>
-                      <input type="number" [(ngModel)]="newLog.runtimeHours" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Run Hours (Hrs)</label>
+                      <input type="number" [(ngModel)]="newLog.runtimeHours" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div style="grid-column: span 2;">
-                      <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Description Details</label>
-                      <input type="text" [(ngModel)]="newLog.description" placeholder="e.g. Changed hydraulic filter and engine oil. Balanced wheels." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Description Details</label>
+                      <input type="text" [(ngModel)]="newLog.description" placeholder="e.g. Changed hydraulic filter and engine oil." style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
                     </div>
                     <div>
-                      <button (click)="submitLog()" style="width: 100%; padding: 9px; background: #e67e22; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                      <button (click)="submitLog()" class="btn-primary" style="width: 100%; justify-content: center;">
                         Log Repair Entry
                       </button>
                     </div>
@@ -263,37 +223,37 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
                 </div>
 
                 <!-- Log History Timeline -->
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <table class="modern-table">
                   <thead>
-                    <tr style="border-bottom: 2px solid #eef2f5; color: #34495e; font-size: 0.9rem; font-weight: 700; text-transform: uppercase;">
-                      <th style="padding: 1rem 0.5rem;">Date</th>
-                      <th style="padding: 1rem 0.5rem;">Service Type</th>
-                      <th style="padding: 1rem 0.5rem;">Details</th>
-                      <th style="padding: 1rem 0.5rem;">Vendor/By</th>
-                      <th style="padding: 1rem 0.5rem; text-align: right;">Counters</th>
-                      <th style="padding: 1rem 0.5rem; text-align: right;">Cost</th>
+                    <tr>
+                      <th>Date</th>
+                      <th>Service Type</th>
+                      <th>Details</th>
+                      <th>Vendor/By</th>
+                      <th style="text-align: right;">Counters</th>
+                      <th style="text-align: right;">Cost</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let l of logs" style="border-bottom: 1px solid #f8f9fa; font-size: 0.95rem; color: #2c3e50;">
-                      <td style="padding: 1rem 0.5rem; white-space: nowrap;">{{ l.serviceDate | date:'mediumDate' }}</td>
-                      <td style="padding: 1rem 0.5rem;"><strong>{{ l.serviceType }}</strong></td>
-                      <td style="padding: 1rem 0.5rem; max-width: 250px; font-size: 0.85rem; color: #7f8c8d;">{{ l.description }}</td>
-                      <td style="padding: 1rem 0.5rem;">{{ l.performedBy }}</td>
-                      <td style="padding: 1rem 0.5rem; text-align: right; font-size: 0.85rem; font-family: monospace;">
+                    <tr *ngFor="let l of logs">
+                      <td style="white-space: nowrap;">{{ l.serviceDate | date:'mediumDate' }}</td>
+                      <td><strong style="color: #ffffff;">{{ l.serviceType }}</strong></td>
+                      <td style="max-width: 250px; font-size: 0.85rem; color: var(--text-muted);">{{ l.description }}</td>
+                      <td>{{ l.performedBy }}</td>
+                      <td style="text-align: right; font-size: 0.85rem; font-family: monospace;">
                         <span *ngIf="l.runtimeHoursAtService">{{ l.runtimeHoursAtService }} hrs<br></span>
                         <span *ngIf="l.odometerKmAtService">{{ l.odometerKmAtService }} km</span>
                       </td>
-                      <td style="padding: 1rem 0.5rem; text-align: right; font-family: monospace; font-weight: bold; color: #c0392b;">{{ l.cost | currency:'USD' }}</td>
+                      <td style="text-align: right; font-family: monospace; font-weight: bold; color: var(--accent-rose);">{{ l.cost | currency:'USD' }}</td>
                     </tr>
-                    <tr *ngIf="logs.length === 0" style="text-align: center; color: #95a5a6;">
-                      <td colspan="6" style="padding: 2rem;">No logged repairs or maintenance activities for this asset.</td>
+                    <tr *ngIf="logs.length === 0">
+                      <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No logged repairs or maintenance activities for this asset.</td>
                     </tr>
                   </tbody>
                 </table>
 
               </div>
-              <div *ngIf="!selectedAsset" style="padding: 4rem; text-align: center; color: #95a5a6;">
+              <div *ngIf="!selectedAsset" style="padding: 4rem; text-align: center; color: var(--text-muted);">
                 👈 Select an asset from the directory on the left to review or log service history.
               </div>
             </div>
@@ -303,37 +263,37 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
 
         <!-- Tab 3: Depreciation Ledger -->
         <div *ngIf="activeTab === 'depreciation'">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fdfefe; border: 1px solid #eef2f5; padding: 1.25rem; border-radius: 8px; border-left: 5px solid #9b59b6;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-glass); padding: 1.25rem; border-radius: 12px; border-left: 4px solid var(--accent-purple);">
             <div>
-              <strong style="color: #2c3e50; display: block; font-size: 1.05rem;">Process Monthly Depreciation Posting</strong>
-              <span style="font-size: 0.85rem; color: #7f8c8d;">Triggers straight-line monthly calculations and generates General Ledger journal entries (Debit 5500 / Credit 1250).</span>
+              <strong style="color: #ffffff; display: block; font-size: 1.05rem;">Process Monthly Depreciation Posting</strong>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Triggers straight-line monthly calculations and generates General Ledger journal entries.</span>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input type="date" [(ngModel)]="executionDate" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;" />
-              <button (click)="runDepreciation()" style="padding: 9px 20px; background: #9b59b6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <input type="date" [(ngModel)]="executionDate" style="padding: 9px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff; font-weight: bold;" />
+              <button (click)="runDepreciation()" class="btn-primary">
                 ⚙️ Run Depreciation
               </button>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem;">
+          <div style="display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem;">
             <!-- Left Picker Column -->
-            <div style="border-right: 1px solid #eef2f5; padding-right: 1.5rem;">
-              <h4 style="margin: 0 0 1rem 0; color: #2c3e50;">Asset Projection</h4>
+            <div style="border-right: 1px solid var(--border-glass); padding-right: 1.25rem;">
+              <h4 style="margin: 0 0 1rem 0; color: #ffffff;">Asset Projection</h4>
               <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 450px; overflow-y: auto;">
                 <div *ngFor="let asset of assets" 
                      (click)="setSelectedAsset(asset)"
                      [ngStyle]="{
-                       'padding': '10px',
+                       'padding': '10px 14px',
                        'border': '1px solid',
-                       'border-color': selectedAsset?.id === asset.id ? '#9b59b6' : '#eef2f5',
-                       'border-radius': '6px',
+                       'border-color': selectedAsset?.id === asset.id ? 'var(--accent-purple)' : 'var(--border-glass)',
+                       'border-radius': '10px',
                        'cursor': 'pointer',
-                       'background-color': selectedAsset?.id === asset.id ? '#faf5fc' : 'transparent',
+                       'background': selectedAsset?.id === asset.id ? 'rgba(139, 92, 246, 0.15)' : 'rgba(30, 41, 59, 0.6)',
                        'transition': 'all 0.2s'
                      }">
-                  <strong style="display: block; font-size: 0.9rem; color: #2c3e50;">{{ asset.name }}</strong>
-                  <span style="font-size: 0.75rem; color: #7f8c8d; font-family: monospace;">Price: {{ asset.purchasePrice | currency:'USD' }}</span>
+                  <strong style="display: block; font-size: 0.9rem; color: #ffffff;">{{ asset.name }}</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">Price: {{ asset.purchasePrice | currency:'USD' }}</span>
                 </div>
               </div>
             </div>
@@ -341,37 +301,37 @@ import { AssetsService, Asset, MaintenanceLog, DepreciationScheduleLine } from '
             <!-- Right Schedule Projection -->
             <div>
               <div *ngIf="selectedAsset">
-                <h4 style="margin: 0 0 1rem 0; color: #9b59b6;">Projected Straight-Line Schedule: {{ selectedAsset.name }}</h4>
-                <div style="margin-bottom: 1.5rem; background: #fafafb; padding: 1rem; border-radius: 6px; font-size: 0.9rem; display: flex; justify-content: space-between; color: #34495e;">
+                <h4 style="margin: 0 0 1rem 0; color: var(--accent-purple);">Projected Straight-Line Schedule: {{ selectedAsset.name }}</h4>
+                <div style="margin-bottom: 1.5rem; background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); padding: 1rem; border-radius: 10px; font-size: 0.9rem; display: flex; justify-content: space-between; color: var(--text-main);">
                   <span>Initial Cost: <strong>{{ selectedAsset.purchasePrice | currency:'USD' }}</strong></span>
                   <span>Useful Life: <strong>{{ selectedAsset.usefulLifeMonths }} months</strong></span>
                   <span>Monthly Depreciation: <strong>{{ (selectedAsset.purchasePrice / selectedAsset.usefulLifeMonths) | currency:'USD' }}</strong></span>
                 </div>
 
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <table class="modern-table">
                   <thead>
-                    <tr style="border-bottom: 2px solid #eef2f5; color: #34495e; font-size: 0.9rem; font-weight: 700; text-transform: uppercase;">
-                      <th style="padding: 0.75rem 0.5rem; text-align: center;">Month</th>
-                      <th style="padding: 0.75rem 0.5rem;">Estimated Post Date</th>
-                      <th style="padding: 0.75rem 0.5rem; text-align: right;">Depreciation Expense</th>
-                      <th style="padding: 0.75rem 0.5rem; text-align: right;">Accumulated Balance</th>
-                      <th style="padding: 0.75rem 0.5rem; text-align: right;">Asset Book Value</th>
+                    <tr>
+                      <th style="text-align: center;">Month</th>
+                      <th>Estimated Post Date</th>
+                      <th style="text-align: right;">Depreciation Expense</th>
+                      <th style="text-align: right;">Accumulated Balance</th>
+                      <th style="text-align: right;">Asset Book Value</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let line of schedule" style="border-bottom: 1px solid #f8f9fa; font-size: 0.95rem; color: #2c3e50;">
-                      <td style="padding: 0.75rem 0.5rem; text-align: center; font-weight: bold; font-family: monospace;">#{{ line.monthIndex }}</td>
-                      <td style="padding: 0.75rem 0.5rem;">{{ line.date | date:'mediumDate' }}</td>
-                      <td style="padding: 0.75rem 0.5rem; text-align: right; font-family: monospace; color: #c0392b;">{{ line.monthlyDepreciation | currency:'USD' }}</td>
-                      <td style="padding: 0.75rem 0.5rem; text-align: right; font-family: monospace; color: #34495e;">{{ line.accumulatedDepreciation | currency:'USD' }}</td>
-                      <td style="padding: 0.75rem 0.5rem; text-align: right; font-family: monospace; font-weight: bold;" [style.color]="line.remainingBookValue > 0 ? '#27ae60' : '#7f8c8d'">
+                    <tr *ngFor="let line of schedule">
+                      <td style="text-align: center; font-weight: bold; font-family: monospace;">#{{ line.monthIndex }}</td>
+                      <td>{{ line.date | date:'mediumDate' }}</td>
+                      <td style="text-align: right; font-family: monospace; color: var(--accent-rose);">{{ line.monthlyDepreciation | currency:'USD' }}</td>
+                      <td style="text-align: right; font-family: monospace; color: var(--text-main);">{{ line.accumulatedDepreciation | currency:'USD' }}</td>
+                      <td style="text-align: right; font-family: monospace; font-weight: bold;" [style.color]="line.remainingBookValue > 0 ? 'var(--primary-emerald)' : 'var(--text-muted)'">
                         {{ line.remainingBookValue | currency:'USD' }}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div *ngIf="!selectedAsset" style="padding: 4rem; text-align: center; color: #95a5a6;">
+              <div *ngIf="!selectedAsset" style="padding: 4rem; text-align: center; color: var(--text-muted);">
                 👈 Select an asset from the picker on the left to compute straight-line depreciation projections.
               </div>
             </div>
@@ -395,7 +355,6 @@ export class AssetsComponent implements OnInit {
 
     selectedAsset?: Asset;
 
-    // Forms states
     showAssetForm = false;
     newAsset = {
         name: '',
@@ -441,7 +400,6 @@ export class AssetsComponent implements OnInit {
         this.newLog.odometer = asset.currentOdometerKm;
         this.newLog.runtimeHours = asset.currentRuntimeHours;
         
-        // Fetch logs
         this.assetsService.getMaintenanceLogs(asset.id).subscribe({
             next: (data) => {
                 this.logs = data;
@@ -450,7 +408,6 @@ export class AssetsComponent implements OnInit {
             error: (err) => console.error('Error fetching logs:', err)
         });
 
-        // Fetch schedule
         this.assetsService.getDepreciationSchedule(asset.id).subscribe({
             next: (data) => {
                 this.schedule = data;
