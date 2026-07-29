@@ -19,135 +19,135 @@ import { AuthService } from '../../../../libs/core/services/auth.service';
         FinanceDashboardComponent
     ],
     template: `
-    <div class="greener-dashboard-wrapper">
+    <div class="dashboard-shell-wrapper">
       
-      <!-- Greener Clean Header Banner -->
-      <div class="greener-header-card">
-        <div class="header-left">
-          <div class="green-status-pill">
-            <span class="green-dot"></span> AgriCopilot AI Engine Active
+      <!-- Layout-Matched Header Banner -->
+      <div class="glass-card layout-header-banner mb-4">
+        <div class="header-left-group">
+          <div class="badge-pill badge-emerald">
+            <span class="pulse-dot"></span> AgriCopilot AI Core Active
           </div>
-          <h1 class="greener-title">🌾 Executive Agribusiness Command Dashboard</h1>
-          <p class="greener-sub">Autonomous Agriculture Analytics, IoT Sensor Telemetry, Livestock Herd & P&L Ledger</p>
+          <h1 class="page-title">🌾 Executive Agribusiness Command Dashboard</h1>
+          <p class="page-subtitle">Autonomous Crop Analytics, IoT Sensor Telemetry, Livestock Herd & Corporate P&L Ledger</p>
         </div>
-        <div class="header-right">
-          <button (click)="triggerAiScan()" class="btn-greener-primary">
+        <div class="header-right-group">
+          <button (click)="triggerAiScan()" class="btn-primary">
             ✨ Run AI Field Scan
           </button>
-          <a routerLink="/crops" class="btn-greener-secondary">🗺️ Interactive Field Map</a>
+          <a routerLink="/crops" class="btn-secondary">🗺️ Interactive Field Map</a>
         </div>
       </div>
 
-      <!-- Botanical Greener AI Alert Banner -->
-      <div *ngIf="aiInsightActive" class="greener-alert-banner">
-        <div class="alert-icon-box">🤖</div>
-        <div class="alert-content-box">
-          <div class="alert-headline">
-            <span class="headline-text">AI Recommendation: Optimal Nitrogen Fertigation Window</span>
-            <span class="confidence-pill">98.4% AI Match</span>
+      <!-- Layout-Matched AI Notification Alert -->
+      <div *ngIf="aiInsightActive" class="glass-card ai-alert-card mb-4">
+        <div class="alert-icon-avatar">🤖</div>
+        <div class="alert-info">
+          <div class="alert-title-bar">
+            <span class="alert-title">AI Recommendation: Optimal Fertigation Window</span>
+            <span class="badge-pill badge-emerald">98.4% Confidence</span>
           </div>
-          <p class="headline-sub">Satellite NDVI spectral scanning indicates nitrogen depletion in Sector-B Upper Slope. Applying 25 L/acre within 48h increases expected corn yield by <strong>+14.2 Bushels/acre</strong>.</p>
+          <p class="alert-desc">Satellite NDVI spectral analysis indicates nitrogen deficiency in Sector-B. Applying 25 L/acre within 48 hours is projected to boost corn yield by <strong>+14.2 Bushels/acre</strong>.</p>
         </div>
         <button (click)="aiInsightActive = false" class="alert-close">✕</button>
       </div>
 
-      <!-- Greener Flat KPI Grid -->
-      <div class="kpi-grid">
+      <!-- Layout-Matched 4-Color Flat KPI Grid -->
+      <div class="kpi-grid mb-4">
         
         <!-- Tile 1: Crops (Emerald Green) -->
-        <div class="greener-kpi-card emerald-theme">
-          <div class="card-header-row">
-            <span class="icon-avatar emerald-avatar">🌾</span>
-            <span class="green-tag emerald-tag">↑ +12.4% YoY</span>
+        <div class="glass-card kpi-tile emerald-accent">
+          <div class="kpi-head">
+            <span class="kpi-avatar emerald-bg">🌾</span>
+            <span class="badge-pill badge-emerald">↑ +12.4% YoY</span>
           </div>
-          <div class="card-body">
-            <span class="card-label">Active Crop Acreage</span>
-            <div class="value-row">
-              <span class="card-value">1,450.8</span>
-              <span class="card-unit">ACRES</span>
+          <div class="kpi-content">
+            <span class="kpi-label">Active Crop Acreage</span>
+            <div class="kpi-val-row">
+              <span class="kpi-val">1,450.8</span>
+              <span class="kpi-unit">ACRES</span>
             </div>
-            <span class="card-footer">NDVI Health: <strong class="c-emerald">0.88 Optimal</strong></span>
+            <span class="kpi-subtext">NDVI Health: <strong class="text-emerald">0.88 Optimal</strong></span>
           </div>
         </div>
 
-        <!-- Tile 2: Livestock (Teal Mint Green) -->
-        <div class="greener-kpi-card mint-theme">
-          <div class="card-header-row">
-            <span class="icon-avatar mint-avatar">🐄</span>
-            <span class="green-tag mint-tag">100% Healthy</span>
+        <!-- Tile 2: Livestock (Azure Blue) -->
+        <div class="glass-card kpi-tile blue-accent">
+          <div class="kpi-head">
+            <span class="kpi-avatar blue-bg">🐄</span>
+            <span class="badge-pill badge-blue">100% Healthy</span>
           </div>
-          <div class="card-body">
-            <span class="card-label">Biological Herd Head</span>
-            <div class="value-row">
-              <span class="card-value">480</span>
-              <span class="card-unit">HEAD</span>
+          <div class="kpi-content">
+            <span class="kpi-label">Biological Herd Head</span>
+            <div class="kpi-val-row">
+              <span class="kpi-val">480</span>
+              <span class="kpi-unit">HEAD</span>
             </div>
-            <span class="card-footer">Milk Production: <strong class="c-mint">14,250 L/Wk</strong></span>
+            <span class="kpi-subtext">Milk Yield: <strong class="text-blue">14,250 L/Wk</strong></span>
           </div>
         </div>
 
-        <!-- Tile 3: Inventory (Olive Lime Green) -->
-        <div class="greener-kpi-card lime-theme">
-          <div class="card-header-row">
-            <span class="icon-avatar lime-avatar">📦</span>
-            <span class="green-tag lime-tag">AVCO Valued</span>
+        <!-- Tile 3: Inventory (Amber Gold) -->
+        <div class="glass-card kpi-tile amber-accent">
+          <div class="kpi-head">
+            <span class="kpi-avatar amber-bg">📦</span>
+            <span class="badge-pill badge-amber">AVCO Valued</span>
           </div>
-          <div class="card-body">
-            <span class="card-label">Warehouse Stock Valuation</span>
-            <div class="value-row">
-              <span class="card-value">$248,500</span>
-              <span class="card-unit">USD</span>
+          <div class="kpi-content">
+            <span class="kpi-label">Stock Valuation</span>
+            <div class="kpi-val-row">
+              <span class="kpi-val">$248,500</span>
+              <span class="kpi-unit">USD</span>
             </div>
-            <span class="card-footer">Warehouse Batches: <strong class="c-lime">42 SKUs</strong></span>
+            <span class="kpi-subtext">Active Stock: <strong class="text-amber">42 SKUs</strong></span>
           </div>
         </div>
 
-        <!-- Tile 4: Operating Margins (Forest Eco Green) -->
-        <div class="greener-kpi-card forest-theme">
-          <div class="card-header-row">
-            <span class="icon-avatar forest-avatar">💰</span>
-            <span class="green-tag forest-tag">High ROI</span>
+        <!-- Tile 4: Operating Margins (Royal Purple) -->
+        <div class="glass-card kpi-tile purple-accent">
+          <div class="kpi-head">
+            <span class="kpi-avatar purple-bg">💰</span>
+            <span class="badge-pill badge-purple">High ROI</span>
           </div>
-          <div class="card-body">
-            <span class="card-label">Net Operating Margin</span>
-            <div class="value-row">
-              <span class="card-value">42.8%</span>
-              <span class="card-unit">P&L</span>
+          <div class="kpi-content">
+            <span class="kpi-label">Net Operating Margin</span>
+            <div class="kpi-val-row">
+              <span class="kpi-val">42.8%</span>
+              <span class="kpi-unit">P&L</span>
             </div>
-            <span class="card-footer">WIP Capitalized: <strong class="c-forest">$112,400</strong></span>
+            <span class="kpi-subtext">WIP Ledger: <strong class="text-purple">$112,400</strong></span>
           </div>
         </div>
 
       </div>
 
-      <!-- Greener Operational Shortcuts Bar -->
-      <div class="shortcuts-card">
-        <span class="shortcuts-title">⚡ Botanical AI Operational Shortcuts</span>
-        <div class="shortcuts-group">
-          <a routerLink="/crops" class="green-pill">✨ AI Yield Forecast</a>
-          <a routerLink="/telemetry" class="green-pill">🛰️ Satellite NDVI Scan</a>
-          <a routerLink="/chemicals" class="green-pill">🧪 Soil PHI Safety Advisor</a>
-          <a routerLink="/finance" class="green-pill">📈 Financial P&L Ledger</a>
-          <a routerLink="/weather" class="green-pill">❄️ Frost Alert Intelligence</a>
+      <!-- Layout-Matched Shortcuts Bar -->
+      <div class="glass-card shortcuts-bar mb-4">
+        <span class="shortcuts-label">⚡ Operational Shortcuts</span>
+        <div class="pill-list">
+          <a routerLink="/crops" class="nav-shortcut-pill">✨ AI Yield Forecast</a>
+          <a routerLink="/telemetry" class="nav-shortcut-pill">🛰️ Satellite NDVI Scan</a>
+          <a routerLink="/chemicals" class="nav-shortcut-pill">🧪 Soil PHI Safety Advisor</a>
+          <a routerLink="/finance" class="nav-shortcut-pill">📈 Financial P&L Ledger</a>
+          <a routerLink="/weather" class="nav-shortcut-pill">❄️ Frost Alert Intelligence</a>
         </div>
       </div>
 
-      <!-- Module Stack Cards -->
+      <!-- Module Stack Layout -->
       <div class="modules-stack">
         
-        <div class="greener-module-card">
+        <div class="glass-card module-card-wrapper">
           <lib-finance-dashboard></lib-finance-dashboard>
         </div>
 
-        <div class="greener-module-card">
+        <div class="glass-card module-card-wrapper">
           <lib-inventory-dashboard></lib-inventory-dashboard>
         </div>
 
-        <div class="greener-module-card">
+        <div class="glass-card module-card-wrapper">
           <lib-telemetry-dashboard></lib-telemetry-dashboard>
         </div>
         
-        <div class="greener-module-card">
+        <div class="glass-card module-card-wrapper">
           <lib-animal-list></lib-animal-list>
         </div>
         
@@ -156,304 +156,221 @@ import { AuthService } from '../../../../libs/core/services/auth.service';
     </div>
   `,
     styles: [`
-    .greener-dashboard-wrapper {
+    .dashboard-shell-wrapper {
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #064e3b;
-      background-color: #f0fdf4;
-      padding: 0.5rem;
-      border-radius: 16px;
+      font-family: var(--font-sans);
+      color: var(--text-main);
     }
 
-    /* Header Banner */
-    .greener-header-card {
-      background: #ffffff;
-      border: 1px solid #bbf7d0;
-      border-radius: 14px;
-      padding: 1.6rem 1.8rem;
+    .layout-header-banner {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.06);
+      padding: 1.75rem 2rem;
       flex-wrap: wrap;
       gap: 1rem;
     }
 
-    .green-status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: #d1fae5;
-      border: 1px solid #6ee7b7;
-      border-radius: 20px;
-      color: #047857;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .green-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #10b981;
-    }
-
-    .greener-title {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #064e3b;
-      margin: 0;
-      letter-spacing: -0.02em;
-    }
-
-    .greener-sub {
-      color: #047857;
-      font-size: 0.92rem;
-      margin: 0.3rem 0 0 0;
-    }
-
-    .header-right {
+    .header-left-group {
       display: flex;
-      gap: 0.75rem;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--primary-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--primary-emerald);
+      display: inline-block;
+    }
+
+    .header-right-group {
+      display: flex;
+      gap: 0.85rem;
       align-items: center;
     }
 
-    .btn-greener-primary {
-      padding: 10px 20px;
-      background: #059669;
-      color: #ffffff;
-      border: none;
-      border-radius: 9px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
-      transition: all 0.2s ease;
-      &:hover { background: #047857; transform: translateY(-1px); }
-    }
-
-    .btn-greener-secondary {
-      padding: 10px 18px;
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-      border-radius: 9px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      &:hover { background: #d1fae5; color: #064e3b; }
-    }
-
-    /* Botanical Greener Alert */
-    .greener-alert-banner {
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      border: 1px solid #6ee7b7;
-      border-radius: 14px;
-      padding: 1.25rem 1.5rem;
+    .ai-alert-card {
       display: flex;
       align-items: flex-start;
-      gap: 1.15rem;
+      gap: 1.25rem;
+      padding: 1.25rem 1.6rem;
+      border-left: 4px solid var(--primary-emerald);
       position: relative;
-      box-shadow: 0 2px 10px rgba(5, 150, 105, 0.08);
     }
 
-    .alert-icon-box { font-size: 1.6rem; }
+    .alert-icon-avatar {
+      font-size: 1.75rem;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
 
-    .alert-headline {
+    .alert-title-bar {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 0.3rem;
     }
 
-    .headline-text {
-      font-weight: 800;
-      color: #064e3b;
-      font-size: 0.98rem;
-    }
-
-    .confidence-pill {
-      background: #059669;
-      color: #ffffff;
-      padding: 2px 9px;
-      border-radius: 12px;
-      font-size: 0.75rem;
+    .alert-title {
       font-weight: 700;
+      color: #ffffff;
+      font-size: 1rem;
     }
 
-    .headline-sub {
-      color: #047857;
+    .alert-desc {
+      color: var(--text-muted);
       margin: 0;
       font-size: 0.9rem;
       line-height: 1.45;
+
+      strong { color: var(--primary-emerald); }
     }
 
     .alert-close {
       background: none;
       border: none;
-      color: #047857;
-      font-size: 1.2rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
       cursor: pointer;
       position: absolute;
-      top: 0.9rem;
-      right: 1.1rem;
+      top: 1rem;
+      right: 1.25rem;
+      &:hover { color: #ffffff; }
     }
 
-    /* Flat Greener KPI Grid */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1.25rem;
     }
 
-    .greener-kpi-card {
-      background: #ffffff;
-      border: 1px solid #bbf7d0;
-      border-radius: 14px;
-      padding: 1.4rem;
+    .kpi-tile {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.05);
-      transition: all 0.25s ease;
+      padding: 1.4rem;
 
-      &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(5, 150, 105, 0.12); }
-      &.emerald-theme { border-top: 4px solid #059669; }
-      &.mint-theme { border-top: 4px solid #0d9488; }
-      &.lime-theme { border-top: 4px solid #65a30d; }
-      &.forest-theme { border-top: 4px solid #16a34a; }
+      &.emerald-accent { border-top: 3px solid var(--primary-emerald); }
+      &.blue-accent { border-top: 3px solid var(--accent-blue); }
+      &.amber-accent { border-top: 3px solid var(--accent-amber); }
+      &.purple-accent { border-top: 3px solid var(--accent-purple); }
     }
 
-    .card-header-row {
+    .kpi-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.9rem;
+      margin-bottom: 1rem;
     }
 
-    .icon-avatar {
-      width: 42px;
-      height: 42px;
+    .kpi-avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
 
-      &.emerald-avatar { background: #d1fae5; border: 1px solid #a7f3d0; }
-      &.mint-avatar { background: #ccfbf1; border: 1px solid #99f6e4; }
-      &.lime-avatar { background: #ecfccb; border: 1px solid #d9f99d; }
-      &.forest-avatar { background: #dcfce7; border: 1px solid #bbf7d0; }
+      &.emerald-bg { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
+      &.blue-bg { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); }
+      &.amber-bg { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
+      &.purple-bg { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); }
     }
 
-    .green-tag {
+    .kpi-label {
       font-size: 0.78rem;
-      font-weight: 700;
-      padding: 4px 9px;
-      border-radius: 8px;
-
-      &.emerald-tag { background: #ecfdf5; color: #047857; }
-      &.mint-tag { background: #f0fdfa; color: #0f766e; }
-      &.lime-tag { background: #f7fee7; color: #4d7c0f; }
-      &.forest-tag { background: #f0fdf4; color: #15803d; }
-    }
-
-    .card-label {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #047857;
+      font-weight: 600;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    .value-row {
+    .kpi-val-row {
       display: flex;
       align-items: baseline;
       gap: 6px;
       margin: 0.25rem 0;
     }
 
-    .card-value {
+    .kpi-val {
+      font-family: var(--font-heading);
       font-size: 1.8rem;
-      font-weight: 800;
-      color: #064e3b;
-    }
-
-    .card-unit {
-      font-size: 0.82rem;
       font-weight: 700;
-      color: #059669;
+      color: #ffffff;
     }
 
-    .card-footer {
-      font-size: 0.84rem;
-      color: #047857;
+    .kpi-unit {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
-    .c-emerald { color: #059669; }
-    .c-mint { color: #0d9488; }
-    .c-lime { color: #65a30d; }
-    .c-forest { color: #16a34a; }
+    .kpi-subtext {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
 
-    /* Operational Shortcuts */
-    .shortcuts-card {
-      background: #ffffff;
-      border: 1px solid #bbf7d0;
-      border-radius: 14px;
-      padding: 1.2rem 1.6rem;
+    .text-emerald { color: var(--primary-emerald); }
+    .text-blue { color: var(--accent-blue); }
+    .text-amber { color: var(--accent-amber); }
+    .text-purple { color: var(--accent-purple); }
+
+    .shortcuts-bar {
       display: flex;
       align-items: center;
       gap: 1.25rem;
-      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.05);
+      padding: 1.1rem 1.6rem;
       flex-wrap: wrap;
     }
 
-    .shortcuts-title {
-      font-size: 0.9rem;
-      font-weight: 800;
-      color: #064e3b;
+    .shortcuts-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #ffffff;
       white-space: nowrap;
     }
 
-    .shortcuts-group {
+    .pill-list {
       display: flex;
-      gap: 0.7rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
     }
 
-    .green-pill {
-      padding: 7px 15px;
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
+    .nav-shortcut-pill {
+      padding: 7px 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-glass);
       border-radius: 20px;
-      color: #047857;
+      color: var(--text-muted);
       font-size: 0.84rem;
-      font-weight: 700;
+      font-weight: 500;
       text-decoration: none;
       transition: all 0.2s ease;
 
-      &:hover { background: #059669; color: #ffffff; border-color: #059669; transform: translateY(-1px); }
+      &:hover {
+        background: rgba(16, 185, 129, 0.18);
+        border-color: rgba(16, 185, 129, 0.4);
+        color: var(--primary-emerald);
+        transform: translateY(-1px);
+      }
     }
 
-    /* Modules Stack */
     .modules-stack {
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1.5rem;
     }
 
-    .greener-module-card {
-      background: #ffffff;
-      border: 1px solid #bbf7d0;
-      border-radius: 14px;
-      padding: 1.6rem;
-      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.05);
+    .module-card-wrapper {
+      padding: 1.5rem;
     }
   `]
 })
@@ -470,7 +387,7 @@ export class DashboardComponent implements OnInit {
     }
 
     triggerAiScan() {
-        alert('🌾 Botanical AI Field Scan completed! Satellite NDVI greenness index and crop health scores updated successfully.');
+        alert('🌾 AgriCopilot AI Scan triggered! Satellite spectral data, weather telemetry & biological herd metrics refreshed.');
     }
 
     logout() {
