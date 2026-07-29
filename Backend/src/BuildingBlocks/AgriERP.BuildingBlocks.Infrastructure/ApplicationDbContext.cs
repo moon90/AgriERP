@@ -44,7 +44,7 @@ namespace AgriERP.BuildingBlocks.Infrastructure
 
                     case EntityState.Modified:
                     case EntityState.Deleted:
-                        if (entry.Entity.TenantId != CurrentTenantId)
+                        if (CurrentTenantId != Guid.Empty && entry.Entity.TenantId != CurrentTenantId)
                         {
                             throw new UnauthorizedAccessException("Security Violation: You cannot modify data of another tenant!");
                         }

@@ -110,5 +110,23 @@ namespace AgriERP.Modules.Finance.Presentation.Controllers
             var result = await _sender.Send(command, cancellationToken);
             return Ok(new { Success = true, PeriodId = result });
         }
+
+        [HttpGet("field-pnl")]
+        [RequirePermission("Ledger.View")]
+        public async Task<IActionResult> GetFieldPnL([FromQuery] System.Guid? fieldId, [FromQuery] System.DateTime? startDate, [FromQuery] System.DateTime? endDate, CancellationToken cancellationToken)
+        {
+            var query = new AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetFieldProfitAndLoss.GetFieldProfitAndLossQuery(fieldId, startDate, endDate);
+            var result = await _sender.Send(query, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("executive-bi")]
+        [RequirePermission("Ledger.View")]
+        public async Task<IActionResult> GetExecutiveBI(CancellationToken cancellationToken)
+        {
+            var query = new AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetExecutiveBIConsolidation.GetExecutiveBIConsolidationQuery();
+            var result = await _sender.Send(query, cancellationToken);
+            return Ok(result);
+        }
     }
 }

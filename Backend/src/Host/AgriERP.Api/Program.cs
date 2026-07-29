@@ -162,6 +162,9 @@ builder.Services.AddScoped<IAgronomyDbContext>(provider => provider.GetRequiredS
 builder.Services.AddScoped<IWeatherDbContext>(provider => provider.GetRequiredService<WeatherDbContext>());
 builder.Services.AddScoped<IInsuranceDbContext>(provider => provider.GetRequiredService<InsuranceDbContext>());
 
+// Cross-context lookup services
+builder.Services.AddScoped<AgriERP.BuildingBlocks.Application.ICropFieldLookupService, AgriERP.Modules.Crops.Infrastructure.Services.CropFieldLookupService>();
+
 // Register test event handler for integration verification
 builder.Services.AddScoped<INotificationHandler<AgriERP.BuildingBlocks.Application.Events.StockValueConsumedIntegrationEvent>, AgriERP.Api.Controllers.TestStockValueConsumedIntegrationEventHandler>();
 
@@ -246,12 +249,14 @@ using (var scope = app.Services.CreateScope())
         var tradingDb = services.GetRequiredService<TradingDbContext>();
         var landDb = services.GetRequiredService<LandDbContext>();
         var irrigationDb = services.GetRequiredService<IrrigationDbContext>();
+        var hrDb = services.GetRequiredService<HrDbContext>();
         var chemicalsDb = services.GetRequiredService<ChemicalsDbContext>();
         var agronomyDb = services.GetRequiredService<AgronomyDbContext>();
         var weatherDb = services.GetRequiredService<WeatherDbContext>();
         var insuranceDb = services.GetRequiredService<InsuranceDbContext>();
 
         await authDb.Database.MigrateAsync();
+        await hrDb.Database.MigrateAsync();
         await inventoryDb.Database.MigrateAsync();
         await livestockDb.Database.MigrateAsync();
         await financeDb.Database.MigrateAsync();

@@ -41,5 +41,10 @@ namespace AgriERP.Modules.Auth.Domain.Entities
         {
             IsActive = false;
         }
+
+        public void UpdatePasswordHash(string newHash)
+        {
+            PasswordHash = newHash;
+        }
     }
 }

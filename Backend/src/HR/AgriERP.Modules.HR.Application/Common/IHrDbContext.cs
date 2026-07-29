@@ -11,6 +11,7 @@ namespace AgriERP.Modules.HR.Application.Common
         DbSet<TimeCard> TimeCards { get; }
         DbSet<PayrollPeriod> PayrollPeriods { get; }
         DbSet<Payslip> Payslips { get; }
+        DbSet<FieldLaborAllocation> FieldLaborAllocations { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

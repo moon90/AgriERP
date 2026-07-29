@@ -96,6 +96,21 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet, Budget
         }">
           ⚖️ Fiscal Closings
         </button>
+
+        <button (click)="activeTab = 'executive-bi'" [ngStyle]="{
+          'padding': '10px 20px',
+          'background': 'none',
+          'border': 'none',
+          'color': activeTab === 'executive-bi' ? '#e67e22' : '#7f8c8d',
+          'font-weight': '700',
+          'font-size': '1rem',
+          'cursor': 'pointer',
+          'border-bottom': activeTab === 'executive-bi' ? '3px solid #e67e22' : 'none',
+          'margin-bottom': '-14px',
+          'transition': 'all 0.2s'
+        }">
+          📊 Executive BI & Field P&L
+        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -461,6 +476,80 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet, Budget
         </div>
 
       </div>
+
+      <!-- Tab 6: Executive BI & Field P&L -->
+      <div *ngIf="activeTab === 'executive-bi'">
+        <!-- Executive KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #27ae60;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">NET REVENUE</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #27ae60; margin-top: 0.25rem;">
+              {{ executiveBi?.enterpriseNetRevenue || 0 | currency:'USD' }}
+            </div>
+          </div>
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #e74c3c;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">OPERATIONAL EXPENSE</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #c0392b; margin-top: 0.25rem;">
+              {{ executiveBi?.enterpriseTotalExpense || 0 | currency:'USD' }}
+            </div>
+          </div>
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #2980b9;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">NET OPERATING PROFIT</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #2980b9; margin-top: 0.25rem;">
+              {{ executiveBi?.enterpriseNetIncome || 0 | currency:'USD' }}
+            </div>
+          </div>
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #e67e22;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">AVG MARGIN / ACRE</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #d35400; margin-top: 0.25rem;">
+              {{ fieldPnLReport?.averageMarginPerAcre || 0 | currency:'USD' }} / acre
+            </div>
+          </div>
+        </div>
+
+        <!-- Field P&L Statements Table -->
+        <div style="background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 2rem;">
+          <h4 style="margin: 0 0 1rem 0; color: #2c3e50;">Field-Level Profit & Loss Statements</h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid #eef2f5; background-color: #f8fafc;">
+                <th style="padding: 10px;">Field Name</th>
+                <th style="padding: 10px; text-align: right;">Acreage</th>
+                <th style="padding: 10px; text-align: right;">Sales Revenue</th>
+                <th style="padding: 10px; text-align: right;">Labor Cost</th>
+                <th style="padding: 10px; text-align: right;">Chemical Cost</th>
+                <th style="padding: 10px; text-align: right;">Irrigation</th>
+                <th style="padding: 10px; text-align: right;">Land Rent</th>
+                <th style="padding: 10px; text-align: right;">Net Profit</th>
+                <th style="padding: 10px; text-align: right;">Margin/Acre</th>
+                <th style="padding: 10px; text-align: center;">ROI %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of fieldPnLReport?.fields" style="border-bottom: 1px solid #eef2f5;">
+                <td style="padding: 10px; font-weight: bold; color: #2c3e50;">{{ f.fieldName }}</td>
+                <td style="padding: 10px; text-align: right;">{{ f.areaAcres }} acres</td>
+                <td style="padding: 10px; text-align: right; color: #27ae60; font-weight: 600;">{{ f.cropSalesRevenue | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right;">{{ f.directLaborExpense | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right;">{{ f.chemicalExpense | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right;">{{ f.irrigationExpense | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right;">{{ f.landLeaseExpense | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right; font-weight: bold; color: #2980b9;">{{ f.netProfit | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: right; font-weight: bold; color: #27ae60;">{{ f.marginPerAcre | currency:'USD' }}</td>
+                <td style="padding: 10px; text-align: center;">
+                  <span style="font-size: 0.75rem; background: #d3f9d8; color: #2b8a3e; padding: 3px 8px; border-radius: 12px; font-weight: bold;">
+                    {{ f.roiPercentage }}%
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="!fieldPnLReport?.fields?.length" style="text-align: center; color: #95a5a6;">
+                <td colspan="10" style="padding: 2rem;">No field profit & loss data recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -468,7 +557,10 @@ export class FinanceDashboardComponent implements OnInit {
     private financeService = inject(FinanceService);
     private cdr = inject(ChangeDetectorRef);
 
-    activeTab: 'trial-balance' | 'income-statement' | 'balance-sheet' | 'budgets' | 'fiscal-closing' = 'trial-balance';
+    activeTab: 'trial-balance' | 'income-statement' | 'balance-sheet' | 'budgets' | 'fiscal-closing' | 'executive-bi' = 'trial-balance';
+
+    fieldPnLReport: any = null;
+    executiveBi: any = null;
 
     trialLines: TrialBalanceLine[] = [];
     incomeStatement?: IncomeStatement;
@@ -522,6 +614,22 @@ export class FinanceDashboardComponent implements OnInit {
                 this.cdr.detectChanges();
             },
             error: (err) => console.error('Error fetching balance sheet:', err)
+        });
+
+        this.financeService.getFieldPnL().subscribe({
+            next: (data) => {
+                this.fieldPnLReport = data;
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error fetching Field PnL:', err)
+        });
+
+        this.financeService.getExecutiveBI().subscribe({
+            next: (data) => {
+                this.executiveBi = data;
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error fetching Executive BI:', err)
         });
     }
 

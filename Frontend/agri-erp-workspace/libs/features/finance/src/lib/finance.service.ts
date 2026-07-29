@@ -100,4 +100,13 @@ export class FinanceService {
     closeFiscalYear(command: any): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/fiscal-years/close`, command);
     }
+
+    getFieldPnL(fieldId?: string): Observable<any> {
+        const url = fieldId ? `${this.apiUrl}/field-pnl?fieldId=${fieldId}` : `${this.apiUrl}/field-pnl`;
+        return this.http.get<any>(url);
+    }
+
+    getExecutiveBI(): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/executive-bi`);
+    }
 }

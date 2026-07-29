@@ -103,5 +103,20 @@ namespace AgriERP.Modules.HR.Presentation.Controllers
             var success = await _sender.Send(command, cancellationToken);
             return Ok(new { Success = success, Message = "Payroll paid and general ledger postings executed." });
         }
+
+        [HttpPost("labor/allocate")]
+        public async Task<IActionResult> AllocateLabor([FromBody] AgriERP.Modules.HR.Application.Labor.Commands.AllocateFieldLabor.AllocateFieldLaborCommand command, CancellationToken cancellationToken)
+        {
+            var allocationId = await _sender.Send(command, cancellationToken);
+            return Ok(new { Success = true, FieldLaborAllocationId = allocationId });
+        }
+
+        [HttpGet("labor/analytics")]
+        public async Task<IActionResult> GetLaborAnalytics(CancellationToken cancellationToken)
+        {
+            var query = new AgriERP.Modules.HR.Application.Labor.Queries.GetFieldLaborAnalytics.GetFieldLaborAnalyticsQuery();
+            var analytics = await _sender.Send(query, cancellationToken);
+            return Ok(analytics);
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AgriERP.Modules.Auth.Application.Users.Commands.RegisterTenant;
+using AgriERP.Modules.Auth.Application.Users.Commands.RegisterTenant;
 using AgriERP.Modules.Auth.Application.Users.Commands.RegisterUser;
 using AgriERP.Modules.Auth.Application.Users.Queries.GetMyPermissions;
 using AgriERP.Modules.Auth.Application.Users.Queries.GetUsers;
@@ -11,7 +11,7 @@ using System.Security.Claims;
 namespace AgriERP.Modules.Auth.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/v1/auth/[controller]")]
+    [Route("api/v1/auth")]
     public class AuthController : ControllerBase
     {
         private readonly ISender _sender;

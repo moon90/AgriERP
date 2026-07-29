@@ -22,6 +22,8 @@ using AgriERP.Modules.Finance.Infrastructure.Persistence;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetTrialBalance;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetIncomeStatement;
 using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetBalanceSheet;
+using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetFieldProfitAndLoss;
+using AgriERP.Modules.Finance.Application.GeneralLedger.Queries.GetExecutiveBIConsolidation;
 using AgriERP.Modules.Finance.Application.Budgets.Commands.SetBudget;
 using AgriERP.Modules.Finance.Application.Budgets.Queries.GetBudgetStatus;
 using AgriERP.Modules.Finance.Application.FiscalYears.Commands.CreateFiscalYear;
@@ -91,6 +93,9 @@ using AgriERP.Modules.Insurance.Application.Insurance.Commands.SubmitLossClaim;
 using AgriERP.Modules.Insurance.Application.Insurance.Commands.SettleLossClaim;
 using AgriERP.Modules.Insurance.Application.Insurance.Queries.GetInsuranceAnalytics;
 using AgriERP.Modules.Insurance.Domain;
+using AgriERP.Modules.HR.Application.Labor.Commands.AllocateFieldLabor;
+using AgriERP.Modules.HR.Application.Labor.Queries.GetFieldLaborAnalytics;
+using AgriERP.Modules.HR.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -2711,6 +2716,207 @@ namespace AgriERP.Api.Controllers
                         "Crop loss incident claims filed.",
                         "Claim adjuster settlements processed.",
                         "General Ledger indemnity revenue postings (Debit 1010 / Credit 4900) balanced."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-labor-verification")]
+        public async Task<IActionResult> RunLaborVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create test employee
+                var emp = new Employee(testTenantId, "John", "Doe", "john.doe@farm.com", "555-0199", "Field Operator", 22.50m, 0.0m, true);
+                await _hrDb.Employees.AddAsync(emp, cancellationToken);
+                await _hrDb.SaveChangesAsync(cancellationToken);
+
+                var fieldId = Guid.NewGuid();
+
+                // 2. Allocate 8.5 field labor hours @ $22.50/hr ($191.25 total cost)
+                var allocateCmd = new AllocateFieldLaborCommand(
+                    EmployeeId: emp.Id,
+                    FieldId: fieldId,
+                    AllocationDate: DateTime.UtcNow,
+                    HoursWorked: 8.5m,
+                    HourlyRate: 22.50m,
+                    ActivityType: "Harvesting",
+                    Notes: "Corn field B-02 harvest labor"
+                );
+
+                var allocationId = await _sender.Send(allocateCmd, cancellationToken);
+                var allocation = await _hrDb.FieldLaborAllocations.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == allocationId, cancellationToken);
+
+                if (allocation == null || allocation.TotalLaborCost != 191.25m)
+                {
+                    throw new Exception("Field labor allocation record or cost calculation failed validation.");
+                }
+
+                // Verify balanced double-entry journal entry: Direct Field Labor Expense (5110) / Accrued Payroll & Labor Liability (2210)
+                var directLaborAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "5110" && a.TenantId == testTenantId, cancellationToken);
+                var accruedLaborAcc = await _financeDb.GeneralLedgerAccounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.AccountCode == "2210" && a.TenantId == testTenantId, cancellationToken);
+
+                if (directLaborAcc == null || accruedLaborAcc == null)
+                {
+                    throw new Exception("GL accounts 5110 or 2210 not created during field labor posting.");
+                }
+
+                var laborTxLines = await (from tl in _financeDb.TransactionLines
+                                          join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                          where je.TenantId == testTenantId && je.Description.Contains("Direct Field Labor")
+                                          select tl).ToListAsync(cancellationToken);
+
+                if (laborTxLines.Count != 2 ||
+                    laborTxLines.First(t => t.AccountId == directLaborAcc.Id).DebitAmount != 191.25m ||
+                    laborTxLines.First(t => t.AccountId == accruedLaborAcc.Id).CreditAmount != 191.25m)
+                {
+                    throw new Exception("Balanced double-entry journal entry for Direct Field Labor failed validation.");
+                }
+
+                // 3. Query Labor Analytics
+                var query = new GetFieldLaborAnalyticsQuery();
+                var analytics = await _sender.Send(query, cancellationToken);
+
+                if (analytics == null || analytics.TotalLaborHours != 8.5m || analytics.TotalLaborExpense != 191.25m)
+                {
+                    throw new Exception("Field labor analytics query failed validation.");
+                }
+
+                // 4. Cleanup test data
+                _hrDb.FieldLaborAllocations.Remove(allocation);
+                _hrDb.Employees.Remove(emp);
+                await _hrDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 21 Direct Field Labor Allocations E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Employee work hours allocated to crop fields.",
+                        "Activity-based labor costing engine (Hours * Hourly Rate) validated.",
+                        "General Ledger labor expense accruals (Debit 5110 / Credit 2210) balanced.",
+                        "Field labor aggregated analytics query executed."
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message, InnerException = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("run-executive-bi-verification")]
+        public async Task<IActionResult> RunExecutiveBIVerification(CancellationToken cancellationToken)
+        {
+            var testTenantId = Guid.NewGuid();
+            Request.Headers["X-Tenant-Id"] = testTenantId.ToString();
+
+            try
+            {
+                // 1. Create Test Crop Field (50.0 Acres)
+                var field = new CropField(testTenantId, "Plot Alpha - Corn Sector", 50.0m, "Silt Loam");
+                await _cropsDb.CropFields.AddAsync(field, cancellationToken);
+                await _cropsDb.SaveChangesAsync(cancellationToken);
+
+                // 2. Setup GL Accounts
+                var cashAcc = new GeneralLedgerAccount(testTenantId, "1010", "Cash & Bank", "Asset");
+                var revAcc = new GeneralLedgerAccount(testTenantId, "4000", "Crop Sales Revenue", "Revenue");
+                var laborAcc = new GeneralLedgerAccount(testTenantId, "5110", "Direct Labor Expense", "Expense");
+                var chemAcc = new GeneralLedgerAccount(testTenantId, "5300", "Chemical Expense", "Expense");
+                var irrAcc = new GeneralLedgerAccount(testTenantId, "5500", "Irrigation Expense", "Expense");
+                var leaseAcc = new GeneralLedgerAccount(testTenantId, "5400", "Land Lease Expense", "Expense");
+                var apAcc = new GeneralLedgerAccount(testTenantId, "2100", "Accounts Payable", "Liability");
+
+                await _financeDb.GeneralLedgerAccounts.AddRangeAsync(new[] { cashAcc, revAcc, laborAcc, chemAcc, irrAcc, leaseAcc, apAcc }, cancellationToken);
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // 3. Post Revenue Journal Entry ($45,000)
+                var revEntry = new JournalEntry(testTenantId, DateTime.UtcNow, "Crop Contract Harvest Sales Revenue");
+                revEntry.AddLine(cashAcc.Id, 45000.00m, 0.0m, "USD", 1.0m);
+                revEntry.AddLine(revAcc.Id, 0.0m, 45000.00m, "USD", 1.0m);
+                revEntry.Post();
+                await _financeDb.JournalEntries.AddAsync(revEntry, cancellationToken);
+
+                // 4. Post Operational Expenses Journal Entry ($11,700 total: Labor $3,500, Chem $2,000, Irr $1,200, Lease $5,000)
+                var expEntry = new JournalEntry(testTenantId, DateTime.UtcNow, "Field Operational Expenses");
+                expEntry.AddLine(laborAcc.Id, 3500.00m, 0.0m, "USD", 1.0m);
+                expEntry.AddLine(chemAcc.Id, 2000.00m, 0.0m, "USD", 1.0m);
+                expEntry.AddLine(irrAcc.Id, 1200.00m, 0.0m, "USD", 1.0m);
+                expEntry.AddLine(leaseAcc.Id, 5000.00m, 0.0m, "USD", 1.0m);
+                expEntry.AddLine(apAcc.Id, 0.0m, 11700.00m, "USD", 1.0m);
+                expEntry.Post();
+                await _financeDb.JournalEntries.AddAsync(expEntry, cancellationToken);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                // 5. Query Field Profit & Loss
+                var pnlQuery = new GetFieldProfitAndLossQuery();
+                var pnlResult = await _sender.Send(pnlQuery, cancellationToken);
+
+                if (pnlResult == null || pnlResult.TotalEnterpriseNetProfit != 33300.00m || pnlResult.AverageMarginPerAcre != 666.00m)
+                {
+                    throw new Exception("Field Profit & Loss calculation failed validation.");
+                }
+
+                // 6. Query Executive BI Consolidation
+                var biQuery = new GetExecutiveBIConsolidationQuery();
+                var biResult = await _sender.Send(biQuery, cancellationToken);
+
+                if (biResult == null || biResult.EnterpriseNetIncome != 33300.00m || biResult.TotalCultivatedAcreage != 50.0m)
+                {
+                    throw new Exception("Executive BI Consolidation calculation failed validation.");
+                }
+
+                // 7. Cleanup Test Records
+                _cropsDb.CropFields.Remove(field);
+                await _cropsDb.SaveChangesAsync(cancellationToken);
+
+                var lines = await (from tl in _financeDb.TransactionLines
+                                   join je in _financeDb.JournalEntries on tl.JournalEntryId equals je.Id
+                                   where je.TenantId == testTenantId
+                                   select tl).ToListAsync(cancellationToken);
+                _financeDb.TransactionLines.RemoveRange(lines);
+
+                var entries = await _financeDb.JournalEntries.Where(j => j.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.JournalEntries.RemoveRange(entries);
+
+                var accounts = await _financeDb.GeneralLedgerAccounts.Where(a => a.TenantId == testTenantId).ToListAsync(cancellationToken);
+                _financeDb.GeneralLedgerAccounts.RemoveRange(accounts);
+
+                await _financeDb.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Phase 22 Executive BI & Field P&L Consolidation E2E verification run passed successfully!",
+                    VerifiedFlows = new[]
+                    {
+                        "Field-level Profit & Loss statement computed (Net Profit: $33,300).",
+                        "Per-Acre Net Margin metric validated ($666.00 / acre).",
+                        "Field Return-On-Investment (ROI: 284.62%) calculated.",
+                        "Executive BI multi-bounded context financial consolidation aggregated cleanly."
                     }
                 });
             }

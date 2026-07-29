@@ -46,4 +46,12 @@ export class HrService {
     payPayroll(periodId: string): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/payroll/runs/${periodId}/pay`, {});
     }
+
+    allocateLabor(command: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/labor/allocate`, command);
+    }
+
+    getLaborAnalytics(): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/labor/analytics`);
+    }
 }

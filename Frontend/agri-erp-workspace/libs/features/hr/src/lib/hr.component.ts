@@ -29,6 +29,9 @@ import { HrService } from './hr.service';
         <button (click)="activeTab = 'payroll'" [style.border-bottom]="activeTab === 'payroll' ? '3px solid #3498db' : 'none'" [style.color]="activeTab === 'payroll' ? '#3498db' : '#64748b'" style="padding: 10px 20px; font-weight: bold; background: none; border: none; cursor: pointer; transition: all 0.2s;">
           💵 Payroll Processing
         </button>
+        <button (click)="activeTab = 'labor'" [style.border-bottom]="activeTab === 'labor' ? '3px solid #e67e22' : 'none'" [style.color]="activeTab === 'labor' ? '#e67e22' : '#64748b'" style="padding: 10px 20px; font-weight: bold; background: none; border: none; cursor: pointer; transition: all 0.2s;">
+          🧑‍🌾 Field Labor Allocations
+        </button>
       </div>
 
       <!-- Tab 1: Employees Directory -->
@@ -283,6 +286,121 @@ import { HrService } from './hr.service';
         </table>
       </div>
 
+      <!-- Tab 4: Direct Field Labor Allocations -->
+      <div *ngIf="activeTab === 'labor'">
+        <!-- Field Labor Metrics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #e67e22;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">TOTAL FIELD LABOR HOURS</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #d35400; margin-top: 0.25rem;">
+              {{ laborAnalytics?.totalLaborHours || 0 | number:'1.1-2' }} hrs
+            </div>
+          </div>
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #27ae60;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">TOTAL DIRECT LABOR EXPENSE</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #27ae60; margin-top: 0.25rem;">
+              {{ laborAnalytics?.totalLaborExpense || 0 | currency:'USD' }}
+            </div>
+          </div>
+          <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; border-left: 5px solid #2980b9;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">FIELDS WORKED</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #2980b9; margin-top: 0.25rem;">
+              {{ laborAnalytics?.totalFieldsWorked || 0 }} Plots
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 340px; gap: 2rem;">
+          <!-- Allocations Table -->
+          <div>
+            <h4 style="margin: 0 0 1rem 0; color: #2c3e50;">Recorded Field Labor Hours</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 2px solid #eef2f5; background-color: #f8fafc;">
+                  <th style="padding: 8px;">Employee</th>
+                  <th style="padding: 8px;">Date / Activity</th>
+                  <th style="padding: 8px; text-align: right;">Hours</th>
+                  <th style="padding: 8px; text-align: right;">Rate ($/hr)</th>
+                  <th style="padding: 8px; text-align: right;">Total Cost ($)</th>
+                  <th style="padding: 8px; text-align: center;">Ledger</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let a of laborAllocations" style="border-bottom: 1px solid #eef2f5;">
+                  <td style="padding: 8px; font-weight: bold; color: #2c3e50;">{{ a.employeeName }}</td>
+                  <td style="padding: 8px;">
+                    <div>{{ a.allocationDate | date:'yyyy-MM-dd' }}</div>
+                    <span style="font-size: 0.75rem; background: #fff3bf; color: #f59f00; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                      {{ a.activityType }}
+                    </span>
+                  </td>
+                  <td style="padding: 8px; text-align: right;">{{ a.hoursWorked }} hrs</td>
+                  <td style="padding: 8px; text-align: right;">{{ a.hourlyRate | currency:'USD' }}</td>
+                  <td style="padding: 8px; text-align: right; font-weight: bold; color: #27ae60;">
+                    {{ a.totalLaborCost | currency:'USD' }}
+                  </td>
+                  <td style="padding: 8px; text-align: center;">
+                    <span style="font-size: 0.75rem; background: #d3f9d8; color: #2b8a3e; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                      Posted GL 5110
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="laborAllocations.length === 0" style="text-align: center; color: #95a5a6;">
+                  <td colspan="6" style="padding: 2rem;">No field labor allocations recorded. Use the form to assign employee hours.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Allocate Labor Form -->
+          <div style="background: #fffaf4; border: 1px solid #ffd8b3; padding: 1.25rem; border-radius: 10px; border-left: 5px solid #e67e22; font-size: 0.85rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #e67e22;">Allocate Field Labor Hours</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Select Employee</label>
+                <select [(ngModel)]="newLabor.employeeId" (change)="onLaborEmpChange()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <option value="">-- Choose Employee --</option>
+                  <option *ngFor="let emp of employees" [value]="emp.id">{{ emp.firstName }} {{ emp.lastName }} ({{ emp.role }})</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Activity Type</label>
+                <select [(ngModel)]="newLabor.activityType" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <option value="Harvesting">Harvesting</option>
+                  <option value="Planting">Planting</option>
+                  <option value="Pruning">Pruning</option>
+                  <option value="Spraying">Spraying</option>
+                  <option value="Weeding">Weeding</option>
+                  <option value="Irrigation">Irrigation</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Work Date</label>
+                <input type="date" [(ngModel)]="newLabor.allocationDate" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div>
+                  <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Hours</label>
+                  <input type="number" [(ngModel)]="newLabor.hoursWorked" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Rate ($/hr)</label>
+                  <input type="number" [(ngModel)]="newLabor.hourlyRate" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                </div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Notes</label>
+                <input type="text" [(ngModel)]="newLabor.notes" placeholder="e.g. Field A-01 harvest team" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              </div>
+              <button (click)="submitLaborAllocation()" [disabled]="!newLabor.employeeId || !newLabor.hoursWorked" style="padding: 10px; background: #e67e22; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                Save & Post Labor Expense
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   `
 })
@@ -297,6 +415,19 @@ export class HrComponent implements OnInit {
     timeCards: any[] = [];
     payrollPeriods: any[] = [];
     payslips: any[] = [];
+
+    laborAllocations: any[] = [];
+    laborAnalytics: any = null;
+
+    newLabor = {
+        employeeId: '',
+        fieldId: '00000000-0000-0000-0000-000000000000',
+        allocationDate: new Date().toISOString().split('T')[0],
+        hoursWorked: 8.0,
+        hourlyRate: 22.50,
+        activityType: 'Harvesting',
+        notes: ''
+    };
 
     newEmp = {
         firstName: '',
@@ -350,6 +481,7 @@ export class HrComponent implements OnInit {
                 this.cdr.detectChanges();
             }
         });
+        this.loadLaborData();
     }
 
     getHourlyEmployees(): any[] {
@@ -467,6 +599,40 @@ export class HrComponent implements OnInit {
                 alert('Payroll paid and wages expense posted to general ledger successfully.');
             },
             error: (err) => alert('Failed to release payouts: ' + (err.error?.error || err.message))
+        });
+    }
+
+    onLaborEmpChange(): void {
+        const emp = this.employees.find(e => e.id === this.newLabor.employeeId);
+        if (emp && emp.baseHourlyRate) {
+            this.newLabor.hourlyRate = emp.baseHourlyRate;
+        }
+    }
+
+    submitLaborAllocation(): void {
+        if (!this.newLabor.employeeId || !this.newLabor.hoursWorked) return;
+
+        const payload = {
+            ...this.newLabor,
+            allocationDate: new Date(this.newLabor.allocationDate).toISOString()
+        };
+
+        this.hrService.allocateLabor(payload).subscribe({
+            next: () => {
+                this.loadAllData();
+                this.newLabor.notes = '';
+            },
+            error: (err) => alert('Failed to allocate field labor: ' + err.message)
+        });
+    }
+
+    loadLaborData(): void {
+        this.hrService.getLaborAnalytics().subscribe({
+            next: (data) => {
+                this.laborAnalytics = data;
+                this.laborAllocations = data.allocations || [];
+                this.cdr.detectChanges();
+            }
         });
     }
 }
