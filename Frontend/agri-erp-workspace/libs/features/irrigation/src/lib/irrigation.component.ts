@@ -8,308 +8,266 @@ import { IrrigationService, WaterSource, WaterUsageLog, WaterBilling } from './i
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 3rem;">
+    <div style="font-family: var(--font-sans); color: var(--text-main);">
       
       <!-- Top Title Header -->
-      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 1rem;">
         <div>
-          <h3 style="color: #2980b9; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">Water Rights & Irrigation Management</h3>
-          <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Monitor water allocations, permit compliance ceilings, log pump telemetry rates, and post GL utility billings.</p>
+          <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">Water Rights & Irrigation Management</h3>
+          <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Monitor water allocations, permit compliance ceilings, log pump telemetry rates, and post GL utility billings.</p>
         </div>
-        <button (click)="loadAll()" style="padding: 8px 16px; background: #2980b9; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+        <button (click)="loadAll()" class="btn-secondary">
           🔄 Refresh Portfolio
         </button>
       </div>
 
       <!-- Tab Buttons Navigation -->
-      <div style="display: flex; gap: 1rem; border-bottom: 2px solid #eef2f5; padding-bottom: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap;">
-        <button (click)="activeTab = 'sources'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'sources' ? '#2980b9' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'sources' ? '3px solid #2980b9' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
+      <div style="display: flex; gap: 0.75rem; border-bottom: 1px solid var(--border-glass); margin-bottom: 1.5rem; padding-bottom: 2px; flex-wrap: wrap;">
+        <button (click)="activeTab = 'sources'" [style.border-bottom]="activeTab === 'sources' ? '3px solid var(--accent-blue)' : 'none'" [style.color]="activeTab === 'sources' ? 'var(--accent-blue)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
           💧 Water Permits
         </button>
         
-        <button (click)="activeTab = 'telemetry'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'telemetry' ? '#e67e22' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'telemetry' ? '3px solid #e67e22' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
+        <button (click)="activeTab = 'telemetry'" [style.border-bottom]="activeTab === 'telemetry' ? '3px solid var(--primary-emerald)' : 'none'" [style.color]="activeTab === 'telemetry' ? 'var(--primary-emerald)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
           📟 Pump Telemetry Simulator
         </button>
         
-        <button (click)="activeTab = 'history'" [ngStyle]="{
-          'padding': '10px 20px',
-          'background': 'none',
-          'border': 'none',
-          'color': activeTab === 'history' ? '#27ae60' : '#7f8c8d',
-          'font-weight': '700',
-          'font-size': '1rem',
-          'cursor': 'pointer',
-          'border-bottom': activeTab === 'history' ? '3px solid #27ae60' : 'none',
-          'margin-bottom': '-14px',
-          'transition': 'all 0.2s'
-        }">
-          📖 Water Utility Ledger
+        <button (click)="activeTab = 'history'" [style.border-bottom]="activeTab === 'history' ? '3px solid var(--accent-amber)' : 'none'" [style.color]="activeTab === 'history' ? 'var(--accent-amber)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
+          📊 Usage Stream
+        </button>
+
+        <button (click)="activeTab = 'billing'" [style.border-bottom]="activeTab === 'billing' ? '3px solid var(--accent-purple)' : 'none'" [style.color]="activeTab === 'billing' ? 'var(--accent-purple)' : 'var(--text-muted)'" style="padding: 10px 18px; font-weight: 700; background: none; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.95rem;">
+          💳 Utility Billings
         </button>
       </div>
 
       <!-- Tab Content Area -->
-      <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5; padding: 1.5rem;">
+      <div style="background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-glass); padding: 1.5rem;">
 
         <!-- Tab 1: Water Permits -->
         <div *ngIf="activeTab === 'sources'">
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
-            <button (click)="showSourceForm = !showSourceForm" style="padding: 8px 16px; background: #2980b9; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-              {{ showSourceForm ? 'Close Form' : '➕ Onboard Water Source' }}
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 1.25rem;">
+            <button (click)="showSourceForm = !showSourceForm" class="btn-primary">
+              {{ showSourceForm ? 'Close Form' : '➕ Register Water Permit' }}
             </button>
           </div>
 
-          <!-- Add Source Form -->
-          <div *ngIf="showSourceForm" style="background: #eef7fc; border: 1px solid #bce1f5; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 5px solid #2980b9; font-size: 0.9rem;">
-            <h4 style="margin: 0 0 1.25rem 0; color: #2980b9; font-size: 1.1rem;">Register Water Source & Seasonal Allocations</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: flex-end;">
+          <div *ngIf="showSourceForm" style="background: rgba(15, 23, 42, 0.8); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass-light); margin-bottom: 2rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff;">Register Water Right / Well Permit</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
               <div>
-                <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Water Source Name</label>
-                <input type="text" [(ngModel)]="newSource.sourceName" placeholder="e.g. Red River Intake" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Source / Well Name</label>
+                <input type="text" [(ngModel)]="newSource.sourceName" placeholder="e.g. Deep Aquifer Well 4" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Permit Number</label>
-                <input type="text" [(ngModel)]="newSource.permitNumber" placeholder="e.g. W-8812-MN" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">State Permit No.</label>
+                <input type="text" [(ngModel)]="newSource.permitNumber" placeholder="e.g. WTR-PERMIT-882" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
               <div>
-                <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Max Allocation (Gallons)</label>
-                <input type="number" [(ngModel)]="newSource.maxAllocatedGallons" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Annual Allocation (Gallons)</label>
+                <input type="number" [(ngModel)]="newSource.maxAllocatedGallons" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
-            </div>
-            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-              <button (click)="submitSource()" style="padding: 10px 24px; background: #2980b9; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                Save Permit
-              </button>
+              <div>
+                <button (click)="submitSource()" class="btn-primary" style="width: 100%; justify-content: center;">
+                  Save Permit Record
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Sources Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-            <div *ngFor="let source of sources" style="background: #ffffff; border: 1px solid #eef2f5; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border-top: 4px solid #2980b9;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <h4 style="margin: 0; color: #2c3e50; font-size: 1.1rem; font-weight: 700;">💧 Source: {{ source.sourceName }}</h4>
-                <span [ngStyle]="{
-                  'background-color': source.status === 'Active' ? '#2ecc71' : '#e74c3c',
-                  'color': 'white',
-                  'padding': '2px 6px',
-                  'border-radius': '3px',
-                  'font-size': '0.75rem',
-                  'font-weight': 'bold'
-                }">{{ source.status }}</span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+            <div *ngFor="let s of sources" style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 12px; padding: 1.25rem; border-top: 4px solid var(--accent-blue);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <div>
+                  <strong style="color: #ffffff; font-size: 1.05rem;">{{ s.sourceName }}</strong>
+                  <span style="display: block; font-size: 0.8rem; color: var(--text-muted);">Permit: {{ s.permitNumber }}</span>
+                </div>
+                <span class="badge-pill badge-blue">{{ s.status }}</span>
               </div>
-              <div style="font-size: 0.85rem; color: #34495e; line-height: 1.6; margin-bottom: 1rem;">
-                <div>Permit: <strong>{{ source.permitNumber }}</strong></div>
-                <div>Usage: <strong>{{ source.usedGallons | number }} / {{ source.maxAllocatedGallons | number }} Gallons</strong></div>
+              
+              <div style="background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                <div>Used: <strong style="color: #ffffff;">{{ s.usedGallons | number:'1.0-0' }} GAL</strong> / {{ s.maxAllocatedGallons | number:'1.0-0' }} GAL</div>
+                <div>Compliance: <strong style="color: var(--primary-emerald);">{{ s.compliancePercentage }}%</strong></div>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.25rem;">
-                <span>Allocation Utilization</span>
-                <span>{{ source.compliancePercentage | number:'1.0-2' }}%</span>
-              </div>
-              <div style="background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
-                <div [style.width.%]="source.compliancePercentage" style="background-color: #2980b9; height: 100%;"></div>
+
+              <!-- Progress bar -->
+              <div style="background: rgba(15, 23, 42, 0.6); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-glass);">
+                <div [style.width.%]="s.compliancePercentage" [style.background]="s.compliancePercentage > 90 ? 'var(--accent-rose)' : 'var(--primary-emerald)'" style="height: 100%;"></div>
               </div>
             </div>
-          </div>
-          <div *ngIf="sources.length === 0" style="padding: 3rem; text-align: center; color: #95a5a6;">
-            No water rights or permit resources onboarded.
           </div>
         </div>
 
         <!-- Tab 2: Telemetry Simulator -->
         <div *ngIf="activeTab === 'telemetry'">
-          <div style="max-width: 600px; margin: 0 auto; background: #fffaf4; border: 1px solid #ffd8b3; padding: 2rem; border-radius: 10px; border-left: 5px solid #e67e22; font-size: 0.9rem;">
-            <h4 style="margin: 0 0 1.5rem 0; color: #e67e22; font-size: 1.25rem;">Simulate Water Pump Flow Telemetry</h4>
-            
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div style="background: rgba(15, 23, 42, 0.8); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass-light); margin-bottom: 2rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff;">Simulate Irrigation Pump Flow Reading</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: flex-end;">
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 0.25rem; color: #64748b;">Select Water Source</label>
-                <select [(ngModel)]="telemetry.waterSourceId" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                  <option value="">-- Select Active Source --</option>
-                  <option *ngFor="let s of getActiveSources()" [value]="s.id">{{ s.sourceName }} (Permit: {{ s.permitNumber }})</option>
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Water Source</label>
+                <select [(ngModel)]="newLog.waterSourceId" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;">
+                  <option value="">-- Select Source --</option>
+                  <option *ngFor="let s of sources" [value]="s.id">{{ s.sourceName }}</option>
                 </select>
               </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div>
-                  <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Gallons Pumped</label>
-                  <input type="number" [(ngModel)]="telemetry.gallonsPumped" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-                </div>
-                <div>
-                  <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Flow Rate (GPM)</label>
-                  <input type="number" [(ngModel)]="telemetry.flowRateGpm" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-                </div>
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div>
-                  <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Utility Cost ($/Gallon)</label>
-                  <input type="number" [(ngModel)]="telemetry.costPerGallon" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-                </div>
-                <div>
-                  <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Irrigation Date</label>
-                  <input type="date" [(ngModel)]="telemetry.irrigationDate" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-                </div>
-              </div>
-
               <div>
-                <label style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Notes / Target Field</label>
-                <input type="text" [(ngModel)]="telemetry.notes" placeholder="e.g. Field #4 Alpha Corn Field" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Gallons Pumped</label>
+                <input type="number" [(ngModel)]="newLog.gallonsPumped" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
-
-              <!-- Estimated Billing Cost Panel -->
-              <div *ngIf="telemetry.gallonsPumped > 0" style="background: #ffffff; border: 1px dashed #e67e22; padding: 1rem; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <span>Estimated Water Utility Charge</span>
-                <strong style="color: #e67e22; font-size: 1.4rem;">
-                  {{ telemetry.gallonsPumped * telemetry.costPerGallon | currency:'USD' }}
-                </strong>
+              <div>
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Flow Rate (GPM)</label>
+                <input type="number" [(ngModel)]="newLog.flowRateGpm" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
               </div>
-
-              <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                <button (click)="submitTelemetry()" [disabled]="!telemetry.waterSourceId || telemetry.gallonsPumped <= 0" style="padding: 12px 28px; background: #e67e22; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; opacity: (telemetry.waterSourceId && telemetry.gallonsPumped > 0) ? 1 : 0.6;">
-                  Log Pump Flow & Bill GL
+              <div>
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Cost ($/GAL)</label>
+                <input type="number" [(ngModel)]="newLog.costPerGallon" step="0.001" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
+              </div>
+              <div>
+                <button (click)="submitLog()" class="btn-primary" style="width: 100%; justify-content: center;">
+                  Log Pump Cycle
                 </button>
               </div>
-
             </div>
           </div>
         </div>
 
-        <!-- Tab 3: Utility Ledger -->
+        <!-- Tab 3: Usage Stream -->
         <div *ngIf="activeTab === 'history'">
-          <div style="background: #eef9f2; border: 1px solid #bce6c9; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.9rem; color: #27ae60; font-weight: bold;">TOTAL WATER & UTILITY EXPENSES</span>
-            <strong style="font-size: 1.75rem; color: #2c3e50;">
-              {{ totalUtilityExpenses | currency:'USD' }}
-            </strong>
-          </div>
-
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+          <table class="modern-table">
             <thead>
-              <tr style="border-bottom: 2px solid #eef2f5; background-color: #f8fafc;">
-                <th style="padding: 8px;">Water Source</th>
-                <th style="padding: 8px; text-align: right;">Gallons Pumped</th>
-                <th style="padding: 8px; text-align: right;">Unit Cost</th>
-                <th style="padding: 8px;">Billing Date</th>
-                <th style="padding: 8px; text-align: right;">Calculated Bill Amount</th>
+              <tr>
+                <th>Source Name</th>
+                <th style="text-align: right;">Gallons Pumped</th>
+                <th style="text-align: right;">Flow Rate (GPM)</th>
+                <th>Irrigation Date</th>
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let b of billings" style="border-bottom: 1px solid #eef2f5;">
-                <td style="padding: 8px; font-weight: bold; font-family: monospace;">{{ b.sourceName }}</td>
-                <td style="padding: 8px; text-align: right;">{{ b.gallonsUsed | number }} gal</td>
-                <td style="padding: 8px; text-align: right;">{{ b.costPerGallon | currency:'USD':'symbol':'1.2-4' }}/gal</td>
-                <td style="padding: 8px;">{{ b.billingDate | date:'yyyy-MM-dd' }}</td>
-                <td style="padding: 8px; text-align: right; font-weight: bold; color: #2c3e50;">
-                  {{ b.amount | currency:'USD' }}
-                </td>
+              <tr *ngFor="let l of logs">
+                <td><strong style="color: #ffffff;">{{ l.sourceName }}</strong></td>
+                <td style="text-align: right; font-family: monospace; font-weight: bold; color: var(--primary-emerald);">{{ l.gallonsPumped | number:'1.0-0' }} GAL</td>
+                <td style="text-align: right; font-family: monospace;">{{ l.flowRateGpm }} GPM</td>
+                <td>{{ l.irrigationDate | date:'mediumDate' }}</td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ l.notes }}</td>
+              </tr>
+              <tr *ngIf="logs.length === 0">
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No irrigation telemetry logs recorded.</td>
               </tr>
             </tbody>
           </table>
-          <div *ngIf="billings.length === 0" style="padding: 3rem; text-align: center; color: #95a5a6;">
-            No water usage bill statements recorded.
-          </div>
+        </div>
+
+        <!-- Tab 4: Utility Billings -->
+        <div *ngIf="activeTab === 'billing'">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Source Name</th>
+                <th style="text-align: right;">Gallons Billed</th>
+                <th style="text-align: right;">Total Fee ($)</th>
+                <th>Billing Date</th>
+                <th style="text-align: center;">Ledger Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of billings">
+                <td><strong style="color: #ffffff;">{{ b.sourceName }}</strong></td>
+                <td style="text-align: right; font-family: monospace;">{{ b.gallonsUsed | number:'1.0-0' }} GAL</td>
+                <td style="text-align: right; font-family: monospace; font-weight: bold; color: var(--accent-rose);">{{ b.amount | currency:'USD' }}</td>
+                <td>{{ b.billingDate | date:'mediumDate' }}</td>
+                <td style="text-align: center;">
+                  <span class="badge-pill badge-emerald">Posted GL 5220</span>
+                </td>
+              </tr>
+              <tr *ngIf="billings.length === 0">
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No water utility billings recorded.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
       </div>
-
     </div>
-  `,
-    styles: []
+  `
 })
 export class IrrigationComponent implements OnInit {
     private irrigationService = inject(IrrigationService);
     private cdr = inject(ChangeDetectorRef);
 
-    activeTab: string = 'sources';
+    activeTab = 'sources';
+    showSourceForm = false;
+
     sources: WaterSource[] = [];
     logs: WaterUsageLog[] = [];
     billings: WaterBilling[] = [];
-    totalUtilityExpenses: number = 0;
-
-    showSourceForm: boolean = false;
 
     newSource = {
         sourceName: '',
         permitNumber: '',
-        maxAllocatedGallons: 100000
+        maxAllocatedGallons: 500000
     };
 
-    telemetry = {
+    newLog = {
         waterSourceId: '',
         fieldId: '00000000-0000-0000-0000-000000000000',
-        gallonsPumped: 2500,
-        flowRateGpm: 45,
-        costPerGallon: 0.05,
-        irrigationDate: '',
+        gallonsPumped: 15000,
+        flowRateGpm: 450,
+        costPerGallon: 0.005,
         notes: ''
     };
 
     ngOnInit(): void {
-        this.telemetry.irrigationDate = new Date().toISOString().split('T')[0];
         this.loadAll();
     }
 
     loadAll(): void {
-        this.irrigationService.getPortfolio().subscribe(p => {
-            this.sources = p.sources;
-            this.logs = p.logs;
-            this.billings = p.billings;
-            this.totalUtilityExpenses = p.totalUtilityExpenses;
-            this.cdr.detectChanges();
+        this.irrigationService.getPortfolio().subscribe({
+            next: (data) => {
+                this.sources = data.sources || [];
+                this.logs = data.logs || [];
+                this.billings = data.billings || [];
+                if (this.sources.length > 0 && !this.newLog.waterSourceId) {
+                    this.newLog.waterSourceId = this.sources[0].id;
+                }
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error fetching water portfolio:', err)
         });
-    }
-
-    getActiveSources(): WaterSource[] {
-        return this.sources.filter(s => s.status === 'Active');
     }
 
     submitSource(): void {
-        if (!this.newSource.sourceName || !this.newSource.permitNumber || this.newSource.maxAllocatedGallons <= 0) return;
-        this.irrigationService.createSource(this.newSource).subscribe(() => {
-            this.newSource = {
-                sourceName: '',
-                permitNumber: '',
-                maxAllocatedGallons: 100000
-            };
-            this.showSourceForm = false;
-            this.loadAll();
+        if (!this.newSource.sourceName || !this.newSource.permitNumber) {
+            alert('Please fill out Source Name and Permit Number.');
+            return;
+        }
+
+        this.irrigationService.createSource(this.newSource).subscribe({
+            next: () => {
+                this.showSourceForm = false;
+                this.newSource.sourceName = '';
+                this.loadAll();
+            },
+            error: (err) => alert('Failed to save permit: ' + err.message)
         });
     }
 
-    submitTelemetry(): void {
-        if (!this.telemetry.waterSourceId || this.telemetry.gallonsPumped <= 0) return;
-        this.irrigationService.logTelemetry(this.telemetry).subscribe(() => {
-            this.telemetry = {
-                waterSourceId: '',
-                fieldId: '00000000-0000-0000-0000-000000000000',
-                gallonsPumped: 2500,
-                flowRateGpm: 45,
-                costPerGallon: 0.05,
-                irrigationDate: new Date().toISOString().split('T')[0],
-                notes: ''
-            };
-            this.loadAll();
+    submitLog(): void {
+        if (!this.newLog.waterSourceId || !this.newLog.gallonsPumped) {
+            alert('Please choose a water source and enter gallons pumped.');
+            return;
+        }
+
+        const command = {
+            ...this.newLog,
+            irrigationDate: new Date().toISOString()
+        };
+
+        this.irrigationService.logTelemetry(command).subscribe({
+            next: () => {
+                this.loadAll();
+                alert('Irrigation telemetry cycle logged successfully.');
+            },
+            error: (err) => alert('Failed to log telemetry: ' + err.message)
         });
     }
 }
