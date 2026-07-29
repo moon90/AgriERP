@@ -7,35 +7,36 @@ import { TelemetryService, IotDevice, GeofenceZone, AnimalLocationLog } from './
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 3rem;">
+    <div style="font-family: var(--font-sans); color: var(--text-main);">
       <!-- Title Header -->
       <div style="margin-bottom: 1.5rem;">
-        <h3 style="color: #2c3e50; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">IoT Sensors & Geofencing Telemetry</h3>
-        <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Monitor crop moisture level actuators and real-time animal boundary limits.</p>
+        <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px;">IoT Sensors & Geofencing Telemetry</h3>
+        <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Monitor crop moisture level actuators and real-time animal boundary limits.</p>
       </div>
 
       <!-- Main Columns Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
         
         <!-- Left Column: Devices and Control Panel -->
         <div>
           <!-- IoT Devices List -->
-          <div style="background: #ffffff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5; margin-bottom: 1.5rem;">
-            <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.2rem; font-weight: 600; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; display: flex; align-items: center;">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass); margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
               <span style="margin-right: 0.5rem;">📡</span> Active IoT Devices
             </h4>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div *ngFor="let device of devices" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+              <div *ngFor="let device of devices" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: rgba(30, 41, 59, 0.8); border-radius: 10px; border-left: 4px solid var(--accent-blue); border-top: 1px solid var(--border-glass);">
                 <div>
-                  <strong style="color: #2c3e50; display: block; font-size: 0.95rem;">{{ device.name }}</strong>
-                  <span style="color: #7f8c8d; font-size: 0.8rem;">Type: {{ device.type }}</span>
+                  <strong style="color: #ffffff; display: block; font-size: 0.95rem;">{{ device.name }}</strong>
+                  <span style="color: var(--text-muted); font-size: 0.8rem;">Type: {{ device.type }}</span>
                 </div>
                 <div>
                   <span [ngStyle]="{
-                    'background-color': device.status === 'Actuator_Triggered_Irrigation' ? '#e67e22' : '#2ecc71',
-                    'color': '#ffffff',
-                    'padding': '4px 8px',
-                    'border-radius': '6px',
+                    'background': device.status === 'Actuator_Triggered_Irrigation' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                    'color': device.status === 'Actuator_Triggered_Irrigation' ? '#f59e0b' : '#10b981',
+                    'border': device.status === 'Actuator_Triggered_Irrigation' ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+                    'padding': '4px 10px',
+                    'border-radius': '20px',
                     'font-size': '0.75rem',
                     'font-weight': '700'
                   }">
@@ -43,30 +44,30 @@ import { TelemetryService, IotDevice, GeofenceZone, AnimalLocationLog } from './
                   </span>
                 </div>
               </div>
-              <div *ngIf="devices.length === 0" style="text-align: center; color: #95a5a6; padding: 1rem;">
+              <div *ngIf="devices.length === 0" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
                 No IoT devices registered.
               </div>
             </div>
           </div>
 
           <!-- Hardwares Simulator Controls Panel -->
-          <div style="background: #ffffff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5;">
-            <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.2rem; font-weight: 600; border-bottom: 2px solid #9b59b6; padding-bottom: 0.5rem; display: flex; align-items: center;">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
               <span style="margin-right: 0.5rem;">⚙️</span> IoT Hardware Simulators
             </h4>
-            <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 0;">Trigger simulated hardware telemetry without needing physical devices connected.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0;">Trigger simulated hardware telemetry without needing physical devices connected.</p>
             
-            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-              <button (click)="triggerMoistureDropSimulation()" [disabled]="devices.length === 0" style="padding: 12px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+            <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem;">
+              <button (click)="triggerMoistureDropSimulation()" [disabled]="devices.length === 0" class="btn-primary" style="justify-content: center; width: 100%;">
                 🌊 Simulate Soil Moisture Drop (Drops below 25%)
               </button>
-              <button (click)="triggerGpsBreachSimulation()" [disabled]="geofences.length === 0" style="padding: 12px; background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+              <button (click)="triggerGpsBreachSimulation()" [disabled]="geofences.length === 0" class="btn-danger" style="justify-content: center; width: 100%;">
                 🐂 Simulate Animal GPS Geofence Breach
               </button>
             </div>
             
             <!-- Simulation feedback messages -->
-            <div *ngIf="simFeedback" style="margin-top: 1rem; padding: 0.75rem; background: #e8f4fd; border: 1px dashed #3498db; border-radius: 6px; font-size: 0.85rem; color: #2980b9; word-break: break-all; font-family: monospace;">
+            <div *ngIf="simFeedback" style="margin-top: 1rem; padding: 0.85rem; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; font-size: 0.85rem; color: var(--accent-blue); word-break: break-all; font-family: monospace;">
               {{ simFeedback }}
             </div>
           </div>
@@ -75,57 +76,57 @@ import { TelemetryService, IotDevice, GeofenceZone, AnimalLocationLog } from './
         <!-- Right Column: Geofence Zones and Log Stream -->
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <!-- Active Geofence Zones -->
-          <div style="background: #ffffff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5;">
-            <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.2rem; font-weight: 600; border-bottom: 2px solid #2ecc71; padding-bottom: 0.5rem; display: flex; align-items: center;">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
               <span style="margin-right: 0.5rem;">🗺️</span> Established Geofence Zones
             </h4>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div *ngFor="let fence of geofences" style="padding: 0.75rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2ecc71;">
-                <strong style="color: #2c3e50; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">{{ fence.name }}</strong>
-                <span style="font-size: 0.8rem; color: #7f8c8d; font-family: monospace; display: block;">Latitude Range: {{ fence.minLatitude }} to {{ fence.maxLatitude }}</span>
-                <span style="font-size: 0.8rem; color: #7f8c8d; font-family: monospace; display: block;">Longitude Range: {{ fence.minLongitude }} to {{ fence.maxLongitude }}</span>
+              <div *ngFor="let fence of geofences" style="padding: 0.85rem 1rem; background: rgba(30, 41, 59, 0.8); border-radius: 10px; border-left: 4px solid var(--primary-emerald); border-top: 1px solid var(--border-glass);">
+                <strong style="color: #ffffff; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">{{ fence.name }}</strong>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; display: block;">Latitude Range: {{ fence.minLatitude }} to {{ fence.maxLatitude }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; display: block;">Longitude Range: {{ fence.minLongitude }} to {{ fence.maxLongitude }}</span>
               </div>
-              <div *ngIf="geofences.length === 0" style="text-align: center; color: #95a5a6; padding: 1rem;">
+              <div *ngIf="geofences.length === 0" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
                 No pasture geofences established.
               </div>
             </div>
           </div>
 
           <!-- GPS Location Logs & Breach Warning System -->
-          <div style="background: #ffffff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5; flex-grow: 1; display: flex; flex-direction: column;">
-            <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.2rem; font-weight: 600; border-bottom: 2px solid #e74c3c; padding-bottom: 0.5rem; display: flex; align-items: center;">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass); flex-grow: 1; display: flex; flex-direction: column;">
+            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
               <span style="margin-right: 0.5rem;">🚨</span> GPS Location Logs Stream
             </h4>
             <div style="overflow-y: auto; max-height: 250px; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem;">
               <div *ngFor="let log of locations" [ngStyle]="{
-                'padding': '0.75rem',
+                'padding': '0.75rem 1rem',
                 'border-radius': '8px',
                 'display': 'flex',
                 'justify-content': 'space-between',
                 'align-items': 'center',
-                'background-color': log.isWithinBounds ? '#f4fbf7' : '#fdf3f2',
-                'border': log.isWithinBounds ? '1px solid #d4eedd' : '1px solid #fadbd8'
+                'background': log.isWithinBounds ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                'border': log.isWithinBounds ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(244, 63, 94, 0.25)'
               }">
                 <div>
-                  <strong style="font-size: 0.85rem; color: #2c3e50; display: block;">Animal ID: {{ log.animalId | slice:0:8 }}...</strong>
-                  <span style="font-size: 0.75rem; color: #7f8c8d; font-family: monospace;">Location: {{ log.latitude }}, {{ log.longitude }}</span>
-                  <span style="font-size: 0.7rem; color: #95a5a6; display: block; margin-top: 0.15rem;">{{ log.recordedAt | date:'medium' }}</span>
+                  <strong style="font-size: 0.85rem; color: #ffffff; display: block;">Animal ID: {{ log.animalId | slice:0:8 }}...</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">Location: {{ log.latitude }}, {{ log.longitude }}</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">{{ log.recordedAt | date:'medium' }}</span>
                 </div>
                 <div>
                   <span [ngStyle]="{
-                    'background-color': log.isWithinBounds ? '#2ecc71' : '#e74c3c',
-                    'color': '#ffffff',
-                    'padding': '4px 8px',
-                    'border-radius': '4px',
+                    'background': log.isWithinBounds ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
+                    'color': log.isWithinBounds ? '#10b981' : '#f43f5e',
+                    'border': log.isWithinBounds ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(244, 63, 94, 0.4)',
+                    'padding': '4px 10px',
+                    'border-radius': '20px',
                     'font-size': '0.7rem',
-                    'font-weight': '700',
-                    'text-transform': 'uppercase'
+                    'font-weight': '700'
                   }">
                     {{ log.isWithinBounds ? 'Safe' : '🚨 Breach!' }}
                   </span>
                 </div>
               </div>
-              <div *ngIf="locations.length === 0" style="text-align: center; color: #95a5a6; padding: 2rem;">
+              <div *ngIf="locations.length === 0" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                 No GPS location data recorded.
               </div>
             </div>

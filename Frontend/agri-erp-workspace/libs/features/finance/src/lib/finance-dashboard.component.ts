@@ -12,10 +12,10 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet, Budget
       <!-- Title Header -->
       <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h3 style="color: #2c3e50; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">General Ledger & Financial Reporting</h3>
-          <p style="color: #7f8c8d; margin: 0.25rem 0 0 0; font-size: 0.9rem;">Review trial balances, post budgets, run year-end fiscal closes, and trace double-entry journal flows.</p>
+          <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px;">General Ledger & Financial Reporting</h3>
+          <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Review trial balances, post budgets, run year-end fiscal closes, and trace double-entry journal flows.</p>
         </div>
-        <button (click)="refreshReports()" style="padding: 8px 16px; background: #34495e; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+        <button (click)="refreshReports()" class="btn-secondary">
           🔄 Refresh Reports
         </button>
       </div>
@@ -114,7 +114,7 @@ import { FinanceService, TrialBalanceLine, IncomeStatement, BalanceSheet, Budget
       </div>
 
       <!-- Tab Content Area -->
-      <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eef2f5; padding: 1.5rem;">
+      <div style="background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-glass); padding: 1.5rem;">
         
         <!-- Tab 1: Trial Balance Table -->
         <div *ngIf="activeTab === 'trial-balance'">

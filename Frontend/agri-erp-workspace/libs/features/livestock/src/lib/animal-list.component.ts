@@ -3,55 +3,70 @@ import { CommonModule } from '@angular/common';
 import { AnimalService } from './animal.service';
 import { Animal } from './animal.model';
 import { TableModule } from 'primeng/table';
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { MessageService } from 'primeng/api'; // নতুন ইমপোর্ট
-import { AddAnimalFormComponent } from './add-animal-form.component'; // নতুন ফর্ম
+import { MessageService } from 'primeng/api';
+import { AddAnimalFormComponent } from './add-animal-form.component';
 
 @Component({
     selector: 'lib-animal-list',
     standalone: true,
-    imports: [CommonModule, TableModule, CardModule, ButtonModule, DynamicDialogModule],
-    providers: [DialogService], // DynamicDialog চালানোর জন্য প্রোভাইডার
+    imports: [CommonModule, TableModule, DynamicDialogModule],
+    providers: [DialogService],
     template: `
-    <p-card header="Livestock Inventory">
-      <div class="flex justify-content-end mb-3">
-        <p-button label="Add New Animal" icon="pi pi-plus" (click)="openAddAnimalDialog()"></p-button>
+    <div style="font-family: var(--font-sans); color: var(--text-main);">
+      
+      <!-- Title Header -->
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px;">Livestock Biological Inventory</h3>
+          <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Track animal tag numbers, biological species classification, fattening, and milk yields.</p>
+        </div>
+        <button (click)="openAddAnimalDialog()" class="btn-primary">
+          ➕ Register New Animal
+        </button>
       </div>
 
-      <p-table [value]="animals" [tableStyle]="{ 'min-width': '50rem' }" [paginator]="true" [rows]="10">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Tag Number</th>
-            <th>Species</th>
-            <th>Purpose</th>
-            <th>Weight (KG)</th>
-            <th>Date of Birth</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-animal>
-          <tr>
-            <td><strong>{{ animal.tagNumber }}</strong></td>
-            <td>{{ animal.species }}</td>
-            <td>
-              <span *ngIf="animal.purpose === 2" class="p-badge p-badge-warning">Qurbani</span>
-              <span *ngIf="animal.purpose === 1" class="p-badge p-badge-success">Fattening</span>
-              <span *ngIf="animal.purpose === 0" class="p-badge p-badge-info">Dairy</span>
-            </td>
-            <td>{{ animal.currentWeight }}</td>
-            <td>{{ animal.dateOfBirth | date:'mediumDate' }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </p-card>
-  `,
+      <!-- Main Dark Slate Glass Table Container -->
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Tag Number</th>
+              <th>Species</th>
+              <th>Purpose</th>
+              <th>Weight (KG)</th>
+              <th>Date of Birth</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let animal of animals">
+              <td><strong style="color: #ffffff;">{{ animal.tagNumber }}</strong></td>
+              <td>{{ animal.species }}</td>
+              <td>
+                <span *ngIf="animal.purpose === 2" class="badge-pill badge-amber">Qurbani</span>
+                <span *ngIf="animal.purpose === 1" class="badge-pill badge-emerald">Fattening</span>
+                <span *ngIf="animal.purpose === 0" class="badge-pill badge-blue">Dairy</span>
+              </td>
+              <td><strong style="color: var(--primary-emerald);">{{ animal.currentWeight }} KG</strong></td>
+              <td>{{ animal.dateOfBirth | date:'mediumDate' }}</td>
+            </tr>
+            <tr *ngIf="animals.length === 0">
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                No livestock records found. Click <strong>Register New Animal</strong> to log head count.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  `
 })
 export class AnimalListComponent implements OnInit {
     private animalService = inject(AnimalService);
     private cdr = inject(ChangeDetectorRef);
     private dialogService = inject(DialogService);
-    private messageService = inject(MessageService); // MessageService ইনজেক্ট করা হলো
+    private messageService = inject(MessageService);
 
     animals: Animal[] = [];
 
@@ -78,14 +93,10 @@ export class AnimalListComponent implements OnInit {
             closable: true
         });
 
-        // মডালটি বন্ধ হওয়ার পর চেক করা ডেটা সেভ হয়েছে কি না
         if (ref) {
             ref.onClose.subscribe((isSuccess: boolean) => {
                 if (isSuccess) {
-                    // সফল হলে আবার এপিআই কল করে লিস্ট রিফ্রেশ করব
                     this.loadAnimals();
-
-                    // সফলভাবে সেভ হলে Toast মেসেজ দেখানো
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Registration Successful',
