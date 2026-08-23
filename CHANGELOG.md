@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Angular `TelemetryStreamService` with persistent SignalR connection, automatic reconnection, and reactive Signals.
   - Modern Dark Slate Glass Telemetry Dashboard with pulsing live connection status badge, 5 dynamic sensory metric cards, interactive zone filter tabs, and real-time live ingestion timeline.
   - xUnit automated unit tests for `TelemetryHub` and SignalR DTO contracts.
+- **Automated Veterinary Vaccination & Breeding Scheduler** (Spec [0002](docs/specs/0002-automated-veterinary-vaccination-and-breeding-scheduler.md)):
+  - ASP.NET Core `VeterinaryController` supporting vaccination dose scheduling, completion records, and automated overdue status evaluations.
+  - Breeding cycle gestation lifecycle engine with automated 283-day expected calving calculations, ultrasound pregnancy diagnosis records, and newborn calf delivery registration into herd inventory.
+  - Multi-tab Dark Slate Glass Angular UI (`Herd Inventory`, `Vaccination Scheduler`, `Breeding & Gestation Lifecycle`) with quick action modals.
+  - xUnit automated unit test suite covering overdue checks, vaccination completion, pregnancy state transitions, and calf birth records.
 - **Agentic Development Workflow & Durable Context**:
   - Integrated 9 Agent Skills from `jsmastery-pro/skills` under `.agents/skills/`.
   - Created root and nested `AGENTS.md` context files (`Backend/AGENTS.md`, `Frontend/agri-erp-workspace/AGENTS.md`).
