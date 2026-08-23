@@ -31,7 +31,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 18 | Crop Insurance Policies, Claims & Payouts | Risk Management | existing |
 | 19 | General Ledger, Journal Entries & Financials | Finance | existing |
 | 20 | Real-time IoT Edge Telemetry WebSocket Streaming | Next Slices | done |
-| 21 | Automated Veterinary Vaccination & Breeding Scheduler | Next Slices | planned |
+| 21 | Automated Veterinary Vaccination & Breeding Scheduler | Next Slices | done |
 | 22 | Multi-tenant Farm Organization Data Isolation | Next Slices | planned |
 | 23 | Mobile-Responsive PWA Offline Sync for Field Workers | Next Slices | planned |
 
@@ -166,10 +166,17 @@ Stream live sensor telemetry (soil moisture, greenhouse climate, animal vital si
 - [x] Test it: `/test real-time IoT edge telemetry websocket streaming`
 Spec 0001 · code in `Backend/src/Host/AgriERP.Api/Hubs/` & `Frontend/agri-erp-workspace/libs/features/telemetry/`
 
-### 21. Automated Veterinary Vaccination & Breeding Scheduler · needs a decision
+### 21. Automated Veterinary Vaccination & Breeding Scheduler · done
 Rule-based notification engine for animal gestation milestones, mandatory vaccination boosters, and vet visits.
 **Done when:** Herd managers receive automated calendar alerts and task lists for upcoming animal health interventions.
-- [ ] Design it (spec): `/architect automated veterinary vaccination & breeding scheduler`
+- [x] Design it (spec): [docs/specs/0002-automated-veterinary-vaccination-and-breeding-scheduler.md](../specs/0002-automated-veterinary-vaccination-and-breeding-scheduler.md)
+- [x] Build it: `/develop automated veterinary vaccination & breeding scheduler`
+   - [x] Backend CQRS Handlers & Controller Endpoints (AC-1, AC-2, AC-3, AC-4)
+   - [x] Frontend Angular Veterinary & Breeding Services (AC-5)
+   - [x] Modern Dark Glass Veterinary & Breeding UI (AC-5)
+- [x] Verify it: `/check verify automated veterinary vaccination & breeding scheduler`
+- [x] Test it: `/test automated veterinary vaccination & breeding scheduler`
+Spec 0002 · code in `Backend/src/Livestock/` & `Frontend/agri-erp-workspace/libs/features/livestock/`
 
 ### 22. Multi-tenant Farm Organization Data Isolation · needs a decision · GA
 Row-level tenant isolation, multi-tenant database partitioning, and enterprise organization switching.
