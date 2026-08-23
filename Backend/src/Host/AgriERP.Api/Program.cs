@@ -65,6 +65,8 @@ using AgriERP.Modules.Insurance.Application;
 using AgriERP.Modules.Insurance.Infrastructure.Persistence;
 using AgriERP.Modules.Insurance.Application.Common;
 using AgriERP.Modules.Insurance.Presentation.Controllers;
+using AgriERP.Api.Hubs;
+using AgriERP.Api.BackgroundServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
@@ -176,13 +178,18 @@ builder.Services.AddScoped<INotificationHandler<AgriERP.BuildingBlocks.Applicati
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// SignalR Real-time Telemetry Service
+builder.Services.AddSignalR();
+builder.Services.AddHostedService<TelemetrySimulationWorker>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
     {
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -239,6 +246,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<TelemetryHub>("/hubs/telemetry");
 
 // Database Migrations & Seeding on Startup
 using (var scope = app.Services.CreateScope())

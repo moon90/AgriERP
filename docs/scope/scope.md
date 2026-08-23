@@ -30,7 +30,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 17 | Futures Hedging & Forward Sales Trading Board | Market Trading | existing |
 | 18 | Crop Insurance Policies, Claims & Payouts | Risk Management | existing |
 | 19 | General Ledger, Journal Entries & Financials | Finance | existing |
-| 20 | Real-time IoT Edge Telemetry WebSocket Streaming | Next Slices | planned |
+| 20 | Real-time IoT Edge Telemetry WebSocket Streaming | Next Slices | done |
 | 21 | Automated Veterinary Vaccination & Breeding Scheduler | Next Slices | planned |
 | 22 | Multi-tenant Farm Organization Data Isolation | Next Slices | planned |
 | 23 | Mobile-Responsive PWA Offline Sync for Field Workers | Next Slices | planned |
@@ -154,10 +154,17 @@ Code in `Backend/src/Finance/` & `Frontend/agri-erp-workspace/libs/features/fina
 
 ## Next Slices (Planned Pipeline)
 
-### 20. Real-time IoT Edge Telemetry WebSocket Streaming · needs a decision
+### 20. Real-time IoT Edge Telemetry WebSocket Streaming · done
 Stream live sensor telemetry (soil moisture, greenhouse climate, animal vital signs) via SignalR/WebSockets.
 **Done when:** Telemetry dashboard updates in real-time without page polling, with automated audio/visual threshold alarms.
-- [ ] Design it (spec): `/architect real-time IoT edge telemetry websocket streaming`
+- [x] Design it (spec): [docs/specs/0001-real-time-iot-telemetry-streaming.md](../specs/0001-real-time-iot-telemetry-streaming.md)
+- [x] Build it: `/develop real-time IoT edge telemetry websocket streaming`
+   - [x] Backend SignalR Hub & Background Simulation Publisher (AC-1, AC-2, AC-3)
+   - [x] Frontend SignalR Streaming Service & Connection State (AC-4)
+   - [x] Modern Dark Slate Glass Telemetry Dashboard UI (AC-5)
+- [x] Verify it: `/check verify real-time IoT edge telemetry websocket streaming`
+- [x] Test it: `/test real-time IoT edge telemetry websocket streaming`
+Spec 0001 · code in `Backend/src/Host/AgriERP.Api/Hubs/` & `Frontend/agri-erp-workspace/libs/features/telemetry/`
 
 ### 21. Automated Veterinary Vaccination & Breeding Scheduler · needs a decision
 Rule-based notification engine for animal gestation milestones, mandatory vaccination boosters, and vet visits.

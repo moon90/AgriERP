@@ -1,209 +1,246 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TelemetryStreamService, TelemetryReading, TelemetryAlarm } from './telemetry-stream.service';
 import { TelemetryService, IotDevice, GeofenceZone, AnimalLocationLog } from './telemetry.service';
 
 @Component({
     selector: 'lib-telemetry-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     template: `
     <div style="font-family: var(--font-sans); color: var(--text-main);">
-      <!-- Title Header -->
-      <div style="margin-bottom: 1.5rem;">
-        <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px;">IoT Sensors & Geofencing Telemetry</h3>
-        <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Monitor crop moisture level actuators and real-time animal boundary limits.</p>
-      </div>
-
-      <!-- Main Columns Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-        
-        <!-- Left Column: Devices and Control Panel -->
+      
+      <!-- Top Title Header & Real-Time Status -->
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <!-- IoT Devices List -->
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass); margin-bottom: 1.5rem;">
-            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
-              <span style="margin-right: 0.5rem;">📡</span> Active IoT Devices
-            </h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div *ngFor="let device of devices" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: rgba(30, 41, 59, 0.8); border-radius: 10px; border-left: 4px solid var(--accent-blue); border-top: 1px solid var(--border-glass);">
-                <div>
-                  <strong style="color: #ffffff; display: block; font-size: 0.95rem;">{{ device.name }}</strong>
-                  <span style="color: var(--text-muted); font-size: 0.8rem;">Type: {{ device.type }}</span>
-                </div>
-                <div>
-                  <span [ngStyle]="{
-                    'background': device.status === 'Actuator_Triggered_Irrigation' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                    'color': device.status === 'Actuator_Triggered_Irrigation' ? '#f59e0b' : '#10b981',
-                    'border': device.status === 'Actuator_Triggered_Irrigation' ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
-                    'padding': '4px 10px',
-                    'border-radius': '20px',
-                    'font-size': '0.75rem',
-                    'font-weight': '700'
-                  }">
-                    {{ device.status }}
-                  </span>
-                </div>
-              </div>
-              <div *ngIf="devices.length === 0" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                No IoT devices registered.
-              </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h3 style="color: #ffffff; margin: 0; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;">Real-Time IoT Edge Telemetry & Biometrics</h3>
+            
+            <!-- Live WebSocket Connection Pulse Badge -->
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"
+                 [style.background]="streamService.connectionStatus() === 'connected' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)'"
+                 [style.border]="streamService.connectionStatus() === 'connected' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(244, 63, 94, 0.4)'"
+                 [style.color]="streamService.connectionStatus() === 'connected' ? 'var(--primary-emerald)' : 'var(--accent-rose)'">
+              <span [style.background]="streamService.connectionStatus() === 'connected' ? 'var(--primary-emerald)' : 'var(--accent-rose)'"
+                    style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px currentColor; animation: pulse 1.8s infinite;"></span>
+              {{ streamService.connectionStatus() === 'connected' ? 'Live WebSocket Stream' : 'Reconnecting WebSocket...' }}
             </div>
           </div>
+          <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Sub-second edge sensory streaming across greenhouse microclimates, soil probes, irrigation lines, and animal biometric collars.</p>
+        </div>
 
-          <!-- Hardwares Simulator Controls Panel -->
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
-            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
-              <span style="margin-right: 0.5rem;">⚙️</span> IoT Hardware Simulators
-            </h4>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0;">Trigger simulated hardware telemetry without needing physical devices connected.</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem;">
-              <button (click)="triggerMoistureDropSimulation()" [disabled]="devices.length === 0" class="btn-primary" style="justify-content: center; width: 100%;">
-                🌊 Simulate Soil Moisture Drop (Drops below 25%)
-              </button>
-              <button (click)="triggerGpsBreachSimulation()" [disabled]="geofences.length === 0" class="btn-danger" style="justify-content: center; width: 100%;">
-                🐂 Simulate Animal GPS Geofence Breach
-              </button>
+        <!-- Controls -->
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button (click)="streamService.startConnection()" class="btn-secondary" style="font-size: 0.85rem;">
+            ⚡ Reconnect Socket
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Alarms Banner (if any alarm is active) -->
+      <div *ngIf="streamService.activeAlarms().length > 0" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.35); border-left: 5px solid var(--accent-rose); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; backdrop-filter: blur(8px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-rose); font-weight: 700; font-size: 0.95rem;">
+            <span>🚨 Active Edge Threshold Alarms ({{ streamService.activeAlarms().length }})</span>
+          </div>
+          <button (click)="streamService.clearAllAlarms()" style="background: none; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
+            Dismiss All Alarms
+          </button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <div *ngFor="let alarm of streamService.activeAlarms()" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #ffffff; background: rgba(15, 23, 42, 0.6); padding: 8px 12px; border-radius: 8px;">
+            <div>
+              <strong style="color: var(--accent-rose);">[{{ alarm.zone }}]</strong> {{ alarm.message }}
+              <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 8px;">({{ alarm.triggeredAt | date:'mediumTime' }})</span>
             </div>
-            
-            <!-- Simulation feedback messages -->
-            <div *ngIf="simFeedback" style="margin-top: 1rem; padding: 0.85rem; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; font-size: 0.85rem; color: var(--accent-blue); word-break: break-all; font-family: monospace;">
-              {{ simFeedback }}
+            <button (click)="streamService.dismissAlarm(alarm.alarmId)" class="badge-pill badge-rose" style="border: none; cursor: pointer; font-size: 0.75rem;">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 Dynamic Real-time Metric Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+        
+        <!-- Soil Moisture -->
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.25rem; border-top: 4px solid var(--accent-blue); position: relative; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Soil Moisture Index</span>
+              <div style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-top: 0.25rem;">
+                {{ streamService.latestSoilMoisture() }}<span style="font-size: 1.1rem; color: var(--accent-blue); font-weight: 600;">%</span>
+              </div>
             </div>
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              💧
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Target: 30% - 60%</span>
+            <span class="badge-pill badge-blue" style="font-size: 0.7rem;">Optimal</span>
           </div>
         </div>
 
-        <!-- Right Column: Geofence Zones and Log Stream -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-          <!-- Active Geofence Zones -->
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
-            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
-              <span style="margin-right: 0.5rem;">🗺️</span> Established Geofence Zones
-            </h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div *ngFor="let fence of geofences" style="padding: 0.85rem 1rem; background: rgba(30, 41, 59, 0.8); border-radius: 10px; border-left: 4px solid var(--primary-emerald); border-top: 1px solid var(--border-glass);">
-                <strong style="color: #ffffff; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">{{ fence.name }}</strong>
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; display: block;">Latitude Range: {{ fence.minLatitude }} to {{ fence.maxLatitude }}</span>
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; display: block;">Longitude Range: {{ fence.minLongitude }} to {{ fence.maxLongitude }}</span>
+        <!-- Ambient Temperature -->
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.25rem; border-top: 4px solid var(--primary-emerald); position: relative; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Greenhouse Climate</span>
+              <div style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-top: 0.25rem;">
+                {{ streamService.latestAmbientTemp() }}<span style="font-size: 1.1rem; color: var(--primary-emerald); font-weight: 600;">°C</span>
               </div>
-              <div *ngIf="geofences.length === 0" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                No pasture geofences established.
-              </div>
+            </div>
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              🌡️
             </div>
           </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Frost Limit: 0.0°C</span>
+            <span class="badge-pill badge-emerald" style="font-size: 0.7rem;">Safe Range</span>
+          </div>
+        </div>
 
-          <!-- GPS Location Logs & Breach Warning System -->
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass); flex-grow: 1; display: flex; flex-direction: column;">
-            <h4 style="margin: 0 0 1rem 0; color: #ffffff; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; display: flex; align-items: center;">
-              <span style="margin-right: 0.5rem;">🚨</span> GPS Location Logs Stream
-            </h4>
-            <div style="overflow-y: auto; max-height: 250px; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem;">
-              <div *ngFor="let log of locations" [ngStyle]="{
-                'padding': '0.75rem 1rem',
-                'border-radius': '8px',
-                'display': 'flex',
-                'justify-content': 'space-between',
-                'align-items': 'center',
-                'background': log.isWithinBounds ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                'border': log.isWithinBounds ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(244, 63, 94, 0.25)'
-              }">
-                <div>
-                  <strong style="font-size: 0.85rem; color: #ffffff; display: block;">Animal ID: {{ log.animalId | slice:0:8 }}...</strong>
-                  <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">Location: {{ log.latitude }}, {{ log.longitude }}</span>
-                  <span style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">{{ log.recordedAt | date:'medium' }}</span>
-                </div>
-                <div>
-                  <span [ngStyle]="{
-                    'background': log.isWithinBounds ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
-                    'color': log.isWithinBounds ? '#10b981' : '#f43f5e',
-                    'border': log.isWithinBounds ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(244, 63, 94, 0.4)',
-                    'padding': '4px 10px',
-                    'border-radius': '20px',
-                    'font-size': '0.7rem',
-                    'font-weight': '700'
-                  }">
-                    {{ log.isWithinBounds ? 'Safe' : '🚨 Breach!' }}
-                  </span>
-                </div>
-              </div>
-              <div *ngIf="locations.length === 0" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                No GPS location data recorded.
+        <!-- Carbon Dioxide (CO2) -->
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.25rem; border-top: 4px solid var(--accent-amber); position: relative; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">CO2 Concentration</span>
+              <div style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-top: 0.25rem;">
+                {{ streamService.latestCO2() | number:'1.0-0' }}<span style="font-size: 1.1rem; color: var(--accent-amber); font-weight: 600;">ppm</span>
               </div>
             </div>
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              💨
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Photosynthesis Boost</span>
+            <span class="badge-pill badge-amber" style="font-size: 0.7rem;">Enriched</span>
+          </div>
+        </div>
+
+        <!-- Livestock Biometrics -->
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.25rem; border-top: 4px solid var(--accent-purple); position: relative; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cattle Herd Heart Rate</span>
+              <div style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-top: 0.25rem;">
+                {{ streamService.latestAnimalHeartRate() | number:'1.0-0' }}<span style="font-size: 1.1rem; color: var(--accent-purple); font-weight: 600;">bpm</span>
+              </div>
+            </div>
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(139, 92, 246, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              🐄
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Resting Normal: 60-85</span>
+            <span class="badge-pill badge-purple" style="font-size: 0.7rem;">Normal Vitals</span>
+          </div>
+        </div>
+
+        <!-- Solar Power & Battery -->
+        <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.25rem; border-top: 4px solid var(--primary-emerald); position: relative; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Solar Station Battery</span>
+              <div style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-top: 0.25rem;">
+                {{ streamService.latestBatteryHealth() | number:'1.0-0' }}<span style="font-size: 1.1rem; color: var(--primary-emerald); font-weight: 600;">%</span>
+              </div>
+            </div>
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              ⚡
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Solar Input: +3.2 kW</span>
+            <span class="badge-pill badge-emerald" style="font-size: 0.7rem;">Charging</span>
           </div>
         </div>
 
       </div>
+
+      <!-- Zone Multi-Filter Tabs -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 4px;">
+        <button *ngFor="let zone of zones"
+                (click)="streamService.setZone(zone)"
+                [style.background]="streamService.selectedZone() === zone ? 'var(--primary-emerald)' : 'rgba(30, 41, 59, 0.6)'"
+                [style.color]="streamService.selectedZone() === zone ? '#0f172a' : 'var(--text-muted)'"
+                [style.border]="streamService.selectedZone() === zone ? '1px solid var(--primary-emerald)' : '1px solid var(--border-glass)'"
+                style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+          {{ zone }}
+        </button>
+      </div>
+
+      <!-- Live Stream Timeline Table Container -->
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h4 style="color: #ffffff; margin: 0; font-size: 1.1rem; font-weight: 700;">📡 Live Edge Ingestion Stream ({{ streamService.filteredReadings().length }} Events)</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Auto-updating via WebSocket Channel</span>
+        </div>
+
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Device Name</th>
+              <th>Farm Zone</th>
+              <th>Sensor Type</th>
+              <th style="text-align: right;">Live Value</th>
+              <th style="text-align: center;">Battery</th>
+              <th>Timestamp</th>
+              <th style="text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of streamService.filteredReadings()">
+              <td>
+                <strong style="color: #ffffff;">{{ item.deviceName }}</strong>
+              </td>
+              <td style="color: var(--text-muted);">{{ item.zone }}</td>
+              <td>
+                <span class="badge-pill badge-blue">{{ item.sensorType }}</span>
+              </td>
+              <td style="text-align: right; font-family: monospace; font-weight: 800; font-size: 1rem;"
+                  [style.color]="item.isAlarm ? 'var(--accent-rose)' : 'var(--primary-emerald)'">
+                {{ item.value }} {{ item.unit }}
+              </td>
+              <td style="text-align: center;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">🔋 {{ item.batteryPercentage }}%</span>
+              </td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">{{ item.timestamp | date:'mediumTime' }}</td>
+              <td style="text-align: center;">
+                <span [ngClass]="item.isAlarm ? 'badge-pill badge-rose' : 'badge-pill badge-emerald'">
+                  {{ item.isAlarm ? '⚠️ Threshold Breach' : '✅ Normal' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="streamService.filteredReadings().length === 0">
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                Connecting to IoT Edge WebSocket Stream... Readings will appear automatically every 3 seconds.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   `
 })
 export class TelemetryDashboardComponent implements OnInit {
-    private telemetryService = inject(TelemetryService);
-    private cdr = inject(ChangeDetectorRef);
+    streamService = inject(TelemetryStreamService);
+    telemetryService = inject(TelemetryService);
 
-    devices: IotDevice[] = [];
-    geofences: GeofenceZone[] = [];
-    locations: AnimalLocationLog[] = [];
-    simFeedback = '';
+    zones: string[] = [
+        'All',
+        'Greenhouse Complex',
+        'Sector-A North Plot',
+        'Livestock Barn 3',
+        'Sector-B Lower Basin',
+        'Central Station'
+    ];
 
     ngOnInit(): void {
-        this.loadTelemetryData();
-    }
-
-    loadTelemetryData(): void {
-        this.telemetryService.getDevices().subscribe({
-            next: (data) => {
-                this.devices = data;
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error('Error fetching telemetry devices:', err)
-        });
-
-        this.telemetryService.getGeofences().subscribe({
-            next: (data) => {
-                this.geofences = data;
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error('Error fetching geofences:', err)
-        });
-
-        this.telemetryService.getLocations().subscribe({
-            next: (data) => {
-                this.locations = data;
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error('Error fetching location logs:', err)
-        });
-    }
-
-    triggerMoistureDropSimulation(): void {
-        if (this.devices.length === 0) return;
-        const targetDevice = this.devices[0];
-        this.simFeedback = 'Initiating simulated soil moisture reading of 24.5%...';
-        this.telemetryService.simulateMoistureDrop(targetDevice.id).subscribe({
-            next: (res) => {
-                this.simFeedback = `Moisture simulator success! Device: ${targetDevice.name}. Actuator status: ${res.triggeredActuatorStatus}.`;
-                this.loadTelemetryData();
-            },
-            error: (err) => {
-                this.simFeedback = `Moisture simulator failed: ${err.message}`;
-            }
-        });
-    }
-
-    triggerGpsBreachSimulation(): void {
-        if (this.geofences.length === 0) return;
-        const targetFence = this.geofences[0];
-        const dummyAnimalId = '00000000-0000-0000-0000-000000000000';
-        this.simFeedback = 'Posting simulated GPS boundary coordinate breaches...';
-        this.telemetryService.simulateGpsBreach(dummyAnimalId, targetFence.id).subscribe({
-            next: (res) => {
-                this.simFeedback = `GPS simulation success! Logged coordinates inside geofence (Safe) and outside geofence (Breach).`;
-                this.loadTelemetryData();
-            },
-            error: (err) => {
-                this.simFeedback = `GPS simulation failed: ${err.message}`;
-            }
-        });
+        this.streamService.startConnection();
     }
 }
