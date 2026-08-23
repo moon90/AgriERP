@@ -1,70 +1,83 @@
-<div style="padding: 2rem; background-color: #f1f5f9; min-height: 100vh; font-family: 'Segoe UI', sans-serif; position: relative;">
+<div style="font-family: var(--font-sans); color: var(--text-main);">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="color: #0f172a; margin: 0; font-size: 1.5rem; font-weight: 600;">Employee Management</h2>
-        <button (click)="openModal()" style="background-color: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+    <!-- Header Section -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 1rem;">
+        <div>
+            <h3 style="color: #ffffff; margin: 0; font-size: 1.5rem; font-weight: 700;">Employee & User Access Control</h3>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Manage user accounts, credentials, status, and role access permissions across AgriERP modules.</p>
+        </div>
+        <button (click)="openModal()" class="btn-primary">
             + Add New Employee
         </button>
     </div>
 
-    <div style="background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+    <!-- Main Table Container -->
+    <div style="background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border-glass);">
+        <table class="modern-table">
+            <thead>
                 <tr>
-                    <th style="padding: 16px; color: #334155; font-size: 14px;">Full Name</th>
-                    <th style="padding: 16px; color: #334155; font-size: 14px;">Email Address</th>
-                    <th style="padding: 16px; color: #334155; font-size: 14px;">Status</th>
-                    <th style="padding: 16px; color: #334155; font-size: 14px;">Actions</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th style="text-align: center;">Status</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @for (user of users; track user.id) {
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 16px; color: #0f172a; font-weight: 500;">{{ user.fullName }}</td>
-                    <td style="padding: 16px; color: #475569;">{{ user.email }}</td>
-                    <td style="padding: 16px;">
-                        <span [ngStyle]="{'background-color': user.isActive ? '#dcfce7' : '#fee2e2', 'color': user.isActive ? '#166534' : '#991b1b', 'padding': '4px 12px', 'border-radius': '9999px', 'font-size': '12px', 'font-weight': '600'}">
+                <tr>
+                    <td><strong style="color: #ffffff;">{{ user.fullName }}</strong></td>
+                    <td style="color: var(--text-muted);">{{ user.email }}</td>
+                    <td style="text-align: center;">
+                        <span [ngClass]="user.isActive ? 'badge-pill badge-emerald' : 'badge-pill badge-rose'">
                             {{ user.isActive ? 'Active' : 'Inactive' }}
                         </span>
                     </td>
-                    <td style="padding: 16px;"><button style="background: #555; border: 1px solid #cbd5e1; padding: 4px 10px; cursor: pointer; border-radius: 4px;">Edit</button></td>
+                    <td style="text-align: center;">
+                        <button class="btn-secondary" style="font-size: 0.78rem; padding: 4px 10px;">Edit</button>
+                    </td>
+                </tr>
+                }
+                @if (users.length === 0) {
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">No user accounts found. Click '+ Add New Employee' to register account.</td>
                 </tr>
                 }
             </tbody>
         </table>
     </div>
 
+    <!-- Add Employee Modal Dialog -->
     @if (showModal) {
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-        <div style="background: white; width: 450px; padding: 2rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: rgba(30, 41, 59, 0.95); width: 450px; padding: 2rem; border-radius: 16px; border: 1px solid var(--border-glass-light); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0; color: #0f172a;">Add New Employee</h3>
-                <button (click)="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="margin: 0; color: #ffffff; font-size: 1.25rem;">Add New Employee</h3>
+                <button (click)="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
 
             <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 14px; color: #475569; margin-bottom: 4px;">Full Name</label>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Full Name <span style="color: var(--accent-rose);">*</span></label>
                     <input type="text" formControlName="fullName" placeholder="Enter full name"
-                           style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                           style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff; box-sizing: border-box;">
                 </div>
 
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 14px; color: #475569; margin-bottom: 4px;">Email Address</label>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Email Address <span style="color: var(--accent-rose);">*</span></label>
                     <input type="email" formControlName="email" placeholder="email@farm.com"
-                           style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                           style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff; box-sizing: border-box;">
                 </div>
 
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 14px; color: #475569; margin-bottom: 4px;">Password</label>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Password <span style="color: var(--accent-rose);">*</span></label>
                     <input type="password" formControlName="password" placeholder="Min 6 characters"
-                           style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                           style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff; box-sizing: border-box;">
                 </div>
 
-                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;margin-bottom: 1rem;">
-                    <label style="font-weight: 600; color: #334155;">Assign Role <span style="color: #ef4444;">*</span></label>
-                    <select formControlName="roleId" class="form-control" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background-white: white;">
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Assign Role <span style="color: var(--accent-rose);">*</span></label>
+                    <select formControlName="roleId" style="padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff; font-size: 0.9rem;">
                         <option value="" disabled selected>-- Select a Role --</option>
 
                         @for (role of roles; track role.id) {
@@ -73,15 +86,13 @@
                     </select>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
-                    <button type="submit" [disabled]="userForm.invalid"
-                            [style.opacity]="userForm.invalid ? 0.6 : 1"
-                            style="flex: 1; background-color: #0284c7; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                        Save Employee
-                    </button>
-                    <button type="button" (click)="closeModal()"
-                            style="flex: 1; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; cursor: pointer;">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" (click)="closeModal()" class="btn-secondary" style="flex: 1; justify-content: center;">
                         Cancel
+                    </button>
+                    <button type="submit" [disabled]="userForm.invalid" class="btn-primary" style="flex: 1; justify-content: center;"
+                            [style.opacity]="userForm.invalid ? 0.5 : 1">
+                        Save Employee
                     </button>
                 </div>
             </form>

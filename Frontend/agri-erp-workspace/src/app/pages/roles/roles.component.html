@@ -1,22 +1,31 @@
-<div class="page-container">
-    <h2>Create New Role & Permissions</h2>
-    <p class="subtitle">Define custom roles and assign specific module permissions.</p>
+<div style="font-family: var(--font-sans); color: var(--text-main);">
+    
+    <!-- Top Header -->
+    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 1rem;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 1.5rem; font-weight: 700;">Role & Permission Security Matrix</h3>
+        <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Define custom security roles, assign fine-grained module privileges, and enforce RBAC policies.</p>
+    </div>
 
     <form [formGroup]="roleForm" (ngSubmit)="onSubmit()" class="role-form">
 
-        <div class="form-section">
-            <div class="form-group">
-                <label>Role Name <span class="required">*</span></label>
-                <input type="text" formControlName="name" placeholder="e.g., Inventory Manager" class="form-control">
-            </div>
+        <!-- Role Name & Description -->
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-glass); border-radius: 14px; padding: 1.5rem; margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Role Name <span style="color: var(--accent-rose);">*</span></label>
+                    <input type="text" formControlName="name" placeholder="e.g. Inventory Manager" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
+                </div>
 
-            <div class="form-group">
-                <label>Description</label>
-                <input type="text" formControlName="description" placeholder="Brief description of the role" class="form-control">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Role Description</label>
+                    <input type="text" formControlName="description" placeholder="Brief summary of duties and module access" style="width: 100%; padding: 10px; background: var(--bg-dark-slate); border: 1px solid var(--border-glass); border-radius: 8px; color: #ffffff;" />
+                </div>
             </div>
         </div>
 
-        <h3 class="matrix-title">Permission Matrix</h3>
+        <h4 style="color: #ffffff; margin: 0 0 1rem 0; font-size: 1.1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem;">
+            🛡️ Module Permission Matrix
+        </h4>
 
         <div class="permission-grid">
             @for (module of groupedModules; track module.moduleName) {
@@ -26,7 +35,6 @@
                     @for (perm of module.permissions; track perm.code) {
                     <label class="checkbox-container">
                         <input type="checkbox" (change)="togglePermission(perm.code, $event)">
-                        <span class="checkmark"></span>
                         <span class="perm-name">{{ perm.name }}</span>
                     </label>
                     }
@@ -35,8 +43,10 @@
             }
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="submit-btn" [disabled]="roleForm.invalid">Create Role</button>
+        <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
+            <button type="submit" class="btn-primary" [disabled]="roleForm.invalid">
+                Create Custom Role
+            </button>
         </div>
 
     </form>
