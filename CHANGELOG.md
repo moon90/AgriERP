@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Breeding cycle gestation lifecycle engine with automated 283-day expected calving calculations, ultrasound pregnancy diagnosis records, and newborn calf delivery registration into herd inventory.
   - Multi-tab Dark Slate Glass Angular UI (`Herd Inventory`, `Vaccination Scheduler`, `Breeding & Gestation Lifecycle`) with quick action modals.
   - xUnit automated unit test suite covering overdue checks, vaccination completion, pregnancy state transitions, and calf birth records.
+- **Multi-Tenant Farm Organization Data Isolation** (Spec [0003](docs/specs/0003-multi-tenant-farm-organization-data-isolation.md)):
+  - Cryptographic tenant resolution supporting both JWT token claims (`tenant_id`, `TenantId`) and `X-Tenant-Id` header fallbacks via `HttpTenantProvider`.
+  - Added `GET /api/v1/auth/tenants` to list active enterprise subsidiaries and `POST /api/v1/auth/switch-tenant` to switch active tenant context with refreshed JWT tokens.
+  - Top navigation Dark Slate Glass Organization Switcher dropdown with active farm organization badge and instant reactive tenant partition switching.
+  - xUnit automated unit test suite verifying tenant entity activation, claim resolution, and switch-tenant data contracts.
 - **Agentic Development Workflow & Durable Context**:
   - Integrated 9 Agent Skills from `jsmastery-pro/skills` under `.agents/skills/`.
   - Created root and nested `AGENTS.md` context files (`Backend/AGENTS.md`, `Frontend/agri-erp-workspace/AGENTS.md`).
