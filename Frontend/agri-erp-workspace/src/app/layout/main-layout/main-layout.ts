@@ -2,11 +2,12 @@ import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router } from '@angular/router';
 import { AuthService, TenantOrganization } from '../../../../libs/core/services/auth.service';
+import { FieldSyncCenterComponent } from '../field-sync-center/field-sync-center.component';
 
 @Component({
     selector: 'app-main-layout',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterModule],
+    imports: [CommonModule, RouterOutlet, RouterModule, FieldSyncCenterComponent],
     templateUrl: './main-layout.html',
     styleUrls: ['./main-layout.scss']
 })

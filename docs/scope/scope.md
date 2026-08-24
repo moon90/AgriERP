@@ -33,7 +33,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 20 | Real-time IoT Edge Telemetry WebSocket Streaming | Next Slices | done |
 | 21 | Automated Veterinary Vaccination & Breeding Scheduler | Next Slices | done |
 | 22 | Multi-tenant Farm Organization Data Isolation | Next Slices | done |
-| 23 | Mobile-Responsive PWA Offline Sync for Field Workers | Next Slices | planned |
+| 23 | Mobile-Responsive PWA Offline Sync for Field Workers | Next Slices | done |
 
 ---
 
@@ -190,10 +190,17 @@ Row-level tenant isolation, multi-tenant database partitioning, and enterprise o
 - [x] Test it: `/test multi-tenant farm organization data isolation`
 Spec 0003 · code in `Backend/src/Auth/` & `Frontend/agri-erp-workspace/`
 
-### 23. Mobile-Responsive PWA Offline Sync for Field Workers · needs a decision
+### 23. Mobile-Responsive PWA Offline Sync for Field Workers · done
 Progressive Web App support with IndexedDB local caching and background sync for offline field data entry.
-**Done when:** Field workers without cellular connectivity can log spray treatments, soil samples, and animal observations offline and sync upon reconnect.
-- [ ] Design it (spec): `/architect mobile-responsive PWA offline sync for field workers`
+**Done when:** Field workers can log crop scouting observations and inventory adjustments without internet access and have them automatically sync when connectivity returns.
+- [x] Design it (spec): [docs/specs/0004-mobile-responsive-pwa-offline-sync.md](../specs/0004-mobile-responsive-pwa-offline-sync.md)
+- [x] Build it: `/develop mobile-responsive PWA offline sync for field workers`
+   - [x] Angular Offline Storage & Sync Engine (AC-1, AC-2, AC-3)
+   - [x] Modern Dark Slate Glass Field Sync Drawer UI (AC-4)
+   - [x] Offline Soil Diagnostic & Scouting Submission Interceptor (AC-5)
+- [x] Verify it: `/check verify mobile-responsive PWA offline sync for field workers`
+- [x] Test it: `/test mobile-responsive PWA offline sync for field workers`
+Spec 0004 · code in `Frontend/agri-erp-workspace/libs/core/services/` & `Frontend/agri-erp-workspace/src/app/`
 
 ---
 

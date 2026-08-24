@@ -2,6 +2,8 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgronomyService, SoilSample, AgronomyRecommendation, LabTestingBilling } from './agronomy.service';
+import { OfflineSyncService } from '../../../../core/services/offline-sync.service';
+import { environment } from '../../../../../src/environments/environment';
 
 @Component({
     selector: 'lib-agronomy',
@@ -212,6 +214,7 @@ import { AgronomyService, SoilSample, AgronomyRecommendation, LabTestingBilling 
 export class AgronomyComponent implements OnInit {
     private agronomyService = inject(AgronomyService);
     private cdr = inject(ChangeDetectorRef);
+    private offlineSync = inject(OfflineSyncService);
 
     activeTab = 'samples';
     showSampleForm = false;
@@ -276,6 +279,26 @@ export class AgronomyComponent implements OnInit {
             testFee: this.newSample.testFee,
             sampleDate: new Date().toISOString()
         };
+
+        if (!this.offlineSync.effectiveOnline()) {
+            this.offlineSync.enqueue('Record Soil Sample', `${environment.apiUrl}/Agronomy/samples`, 'POST', command);
+            this.samples = [{
+                id: `TEMP-${Date.now()}`,
+                fieldId: '00000000-0000-0000-0000-000000000000',
+                sampleCode: this.newSample.sampleCode + ' (Offline Queued)',
+                labName: this.newSample.labName,
+                phLevel: this.newSample.phLevel,
+                nitrogenPpm: this.newSample.nitrogenPpm,
+                phosphorusPpm: this.newSample.phosphorusPpm,
+                potassiumPpm: this.newSample.potassiumPpm,
+                organicMatterPercentage: this.newSample.organicMatterPercentage,
+                sampleDate: new Date().toISOString()
+            }, ...this.samples];
+            this.showSampleForm = false;
+            this.newSample.sampleCode = '';
+            alert('📱 Offline Mode: Soil diagnostic sample queued into local outbox. Will sync automatically upon reconnecting.');
+            return;
+        }
 
         this.agronomyService.recordSample(command).subscribe({
             next: () => {
