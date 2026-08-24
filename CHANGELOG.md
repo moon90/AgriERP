@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dark Slate Glass floating **PWA Field Sync Center** drawer widget with live connection status pill (`🟢 Online - Synced`, `🟡 Offline Mode`), outbox transaction inspector, force cloud sync action, and built-in offline simulation mode.
   - Integrated offline queueing in `AgronomyComponent` for low-connectivity soil diagnostic and field scouting logs.
   - xUnit automated unit test suite verifying offline outbox payload structures, execution state transitions, and retry count escalation.
+- **Voice-to-Inventory Farm POS Counter**:
+  - Hands-free Web Speech API order recognition engine with client-side speech synthesis cashier voice feedback.
+  - `PosController` with natural language regex quantity/item token extraction, stock availability verification, and POS multi-payment checkout.
+  - Interactive two-column Dark Slate Glass POS counter with dynamic cart manipulation, rapid category filters, thermal receipt print modal, and change-due calculation.
+  - Automated xUnit test suite verifying voice regex tokenization, 5% VAT calculation, and receipt data structures.
 - **Agentic Development Workflow & Durable Context**:
   - Integrated 9 Agent Skills from `jsmastery-pro/skills` under `.agents/skills/`.
   - Created root and nested `AGENTS.md` context files (`Backend/AGENTS.md`, `Frontend/agri-erp-workspace/AGENTS.md`).

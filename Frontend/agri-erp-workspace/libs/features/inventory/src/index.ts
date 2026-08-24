@@ -3,3 +3,5 @@ export * from './lib/inventory-dashboard.component';
 export * from './lib/procurement/procurement.component';
 export * from './lib/sales/sales.component';
 export * from './lib/inventory.service';
+export * from './lib/pos/voice-pos.component';
+export * from './lib/pos/voice-pos.service';

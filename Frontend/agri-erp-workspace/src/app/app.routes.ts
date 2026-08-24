@@ -58,6 +58,10 @@ export const appRoutes: Route[] = [
                 loadComponent: () => import('@agri-erp-workspace/inventory').then(m => m.SalesComponent)
             },
             {
+                path: 'pos',
+                loadComponent: () => import('@agri-erp-workspace/inventory').then(m => m.VoicePosComponent)
+            },
+            {
                 path: 'hr',
                 loadComponent: () => import('@agri-erp-workspace/hr').then(m => m.HrComponent)
             },

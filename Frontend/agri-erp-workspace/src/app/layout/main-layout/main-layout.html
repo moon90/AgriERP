@@ -75,6 +75,11 @@
                 <span class="icon">📈</span> Sales Contracts
             </a>
             }
+            @if (authService.hasPermission('Inventory.View')) {
+            <a routerLink="/pos" routerLinkActive="active-link" class="nav-link">
+                <span class="icon">🎙️</span> Voice POS Counter
+            </a>
+            }
             @if (authService.hasPermission('Logistics.View')) {
             <a routerLink="/logistics" routerLinkActive="active-link" class="nav-link">
                 <span class="icon">🚛</span> Grain Scale & Logistics
