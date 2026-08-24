@@ -2,22 +2,32 @@ import { Route } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { UserListComponent } from './pages/users/user-list.component';
+import { LandingPageComponent } from './pages/landing/landing-page.component';
+import { SignupWizardComponent } from './pages/signup/signup-wizard.component';
 import { authGuard } from '../../libs/core/guards/auth.guard';
-// MainLayout ইমপোর্ট করুন (আপনার তৈরি করা পাথ অনুযায়ী)
 import { MainLayoutComponent } from './layout/main-layout/main-layout';
 
 export const appRoutes: Route[] = [
-    // ১. পাবলিক রাউট (লেআউট ছাড়া)
+    // 1. Public Marketing & Onboarding Pages (No Layout Shell)
+    {
+        path: '',
+        component: LandingPageComponent,
+        pathMatch: 'full'
+    },
+    {
+        path: 'signup',
+        component: SignupWizardComponent
+    },
     {
         path: 'login',
         component: LoginComponent
     },
 
-    // ২. প্রাইভেট রাউট (Main Layout-এর ভেতরে)
+    // 2. Authenticated Enterprise Farm Management Shell (Main Layout)
     {
         path: '',
         component: MainLayoutComponent,
-        canActivate: [authGuard], // গার্ড এখন প্যারেন্টে, তাই ভেতরের সব পেজ সুরক্ষিত!
+        canActivate: [authGuard],
         children: [
             {
                 path: 'dashboard',
@@ -90,18 +100,13 @@ export const appRoutes: Route[] = [
             {
                 path: 'insurance',
                 loadComponent: () => import('@agri-erp-workspace/insurance').then(m => m.InsuranceComponent)
-            },
-            {
-                path: '',
-                redirectTo: 'dashboard',
-                pathMatch: 'full'
             }
         ]
     },
 
-    // ৩. ভুল URL দিলে লগইনে নিয়ে যাবে
+    // 3. Fallback Route
     {
         path: '**',
-        redirectTo: 'login'
+        redirectTo: ''
     }
 ];
