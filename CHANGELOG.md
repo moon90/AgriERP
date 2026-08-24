@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `GET /api/v1/auth/tenants` to list active enterprise subsidiaries and `POST /api/v1/auth/switch-tenant` to switch active tenant context with refreshed JWT tokens.
   - Top navigation Dark Slate Glass Organization Switcher dropdown with active farm organization badge and instant reactive tenant partition switching.
   - xUnit automated unit test suite verifying tenant entity activation, claim resolution, and switch-tenant data contracts.
+- **Mobile-Responsive PWA Offline Sync for Field Workers** (Spec [0004](docs/specs/0004-mobile-responsive-pwa-offline-sync.md)):
+  - Angular `OfflineSyncService` managing persistent client-side outbox in IndexedDB/localStorage with automatic network event listeners (`online`/`offline`).
+  - Dark Slate Glass floating **PWA Field Sync Center** drawer widget with live connection status pill (`🟢 Online - Synced`, `🟡 Offline Mode`), outbox transaction inspector, force cloud sync action, and built-in offline simulation mode.
+  - Integrated offline queueing in `AgronomyComponent` for low-connectivity soil diagnostic and field scouting logs.
+  - xUnit automated unit test suite verifying offline outbox payload structures, execution state transitions, and retry count escalation.
 - **Agentic Development Workflow & Durable Context**:
   - Integrated 9 Agent Skills from `jsmastery-pro/skills` under `.agents/skills/`.
   - Created root and nested `AGENTS.md` context files (`Backend/AGENTS.md`, `Frontend/agri-erp-workspace/AGENTS.md`).
