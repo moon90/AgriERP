@@ -32,7 +32,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 19 | General Ledger, Journal Entries & Financials | Finance | existing |
 | 20 | Real-time IoT Edge Telemetry WebSocket Streaming | Next Slices | done |
 | 21 | Automated Veterinary Vaccination & Breeding Scheduler | Next Slices | done |
-| 22 | Multi-tenant Farm Organization Data Isolation | Next Slices | planned |
+| 22 | Multi-tenant Farm Organization Data Isolation | Next Slices | done |
 | 23 | Mobile-Responsive PWA Offline Sync for Field Workers | Next Slices | planned |
 
 ---
@@ -178,10 +178,17 @@ Rule-based notification engine for animal gestation milestones, mandatory vaccin
 - [x] Test it: `/test automated veterinary vaccination & breeding scheduler`
 Spec 0002 · code in `Backend/src/Livestock/` & `Frontend/agri-erp-workspace/libs/features/livestock/`
 
-### 22. Multi-tenant Farm Organization Data Isolation · needs a decision · GA
+### 22. Multi-tenant Farm Organization Data Isolation · done
 Row-level tenant isolation, multi-tenant database partitioning, and enterprise organization switching.
-**Done when:** Multiple independent agricultural enterprises can securely manage separate farm operations on the same platform.
-- [ ] Design it (spec): `/architect multi-tenant farm organization data isolation`
+**Done when:** Tenants cannot access cross-tenant data, and users can switch between assigned organizations seamlessly.
+- [x] Design it (spec): [docs/specs/0003-multi-tenant-farm-organization-data-isolation.md](../specs/0003-multi-tenant-farm-organization-data-isolation.md)
+- [x] Build it: `/develop multi-tenant farm organization data isolation`
+   - [x] Backend Organization Switching & Tenant Endpoints (AC-1, AC-2, AC-3)
+   - [x] Frontend Tenant Switcher State (AC-4)
+   - [x] Modern Dark Slate Glass Organization Switcher Header UI (AC-5)
+- [x] Verify it: `/check verify multi-tenant farm organization data isolation`
+- [x] Test it: `/test multi-tenant farm organization data isolation`
+Spec 0003 · code in `Backend/src/Auth/` & `Frontend/agri-erp-workspace/`
 
 ### 23. Mobile-Responsive PWA Offline Sync for Field Workers · needs a decision
 Progressive Web App support with IndexedDB local caching and background sync for offline field data entry.

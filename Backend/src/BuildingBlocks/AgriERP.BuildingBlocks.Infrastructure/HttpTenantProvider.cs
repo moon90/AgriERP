@@ -1,4 +1,4 @@
-﻿using AgriERP.BuildingBlocks.Application;
+using AgriERP.BuildingBlocks.Application;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -26,7 +26,9 @@ namespace AgriERP.BuildingBlocks.Infrastructure
 
                 // 1. Try to get from JWT Claims first (Highly Secure)
                 var user = httpContext.User;
-                var tenantClaim = user?.FindFirst(TenantClaimName)?.Value;
+                var tenantClaim = user?.FindFirst(TenantClaimName)?.Value 
+                    ?? user?.FindFirst("TenantId")?.Value 
+                    ?? user?.FindFirst("tenantId")?.Value;
                 if (!string.IsNullOrEmpty(tenantClaim) && Guid.TryParse(tenantClaim, out var tenantGuidFromClaim))
                 {
                     return tenantGuidFromClaim;

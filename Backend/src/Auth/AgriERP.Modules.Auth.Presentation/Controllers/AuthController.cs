@@ -1,3 +1,4 @@
+using AgriERP.Modules.Auth.Application.Common.Interfaces;
 using AgriERP.Modules.Auth.Application.Users.Commands.RegisterTenant;
 using AgriERP.Modules.Auth.Application.Users.Commands.RegisterUser;
 using AgriERP.Modules.Auth.Application.Users.Queries.GetMyPermissions;
@@ -6,19 +7,26 @@ using AgriERP.Modules.Auth.Application.Users.Queries.LoginUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AgriERP.Modules.Auth.Presentation.Controllers
 {
+    public record SwitchTenantRequest(Guid TenantId);
+
     [ApiController]
     [Route("api/v1/auth")]
     public class AuthController : ControllerBase
     {
         private readonly ISender _sender;
+        private readonly IAuthDbContext _context;
+        private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
-        public AuthController(ISender sender)
+        public AuthController(ISender sender, IAuthDbContext context, IJwtTokenGenerator jwtTokenGenerator)
         {
             _sender = sender;
+            _context = context;
+            _jwtTokenGenerator = jwtTokenGenerator;
         }
 
         [AllowAnonymous]
@@ -87,6 +95,55 @@ namespace AgriERP.Modules.Auth.Presentation.Controllers
             // MediatR-এর মাধ্যমে GetUsersQuery কল করা হচ্ছে
             var users = await _sender.Send(new GetUsersQuery());
             return Ok(users);
+        }
+
+        [Authorize]
+        [HttpGet("tenants")]
+        public async Task<IActionResult> GetTenants(CancellationToken cancellationToken)
+        {
+            var tenants = await _context.Tenants
+                .AsNoTracking()
+                .Where(t => t.IsActive)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Name,
+                    t.Subdomain,
+                    t.IsActive
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(tenants);
+        }
+
+        [Authorize]
+        [HttpPost("switch-tenant")]
+        public async Task<IActionResult> SwitchTenant([FromBody] SwitchTenantRequest request, CancellationToken cancellationToken)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out var userId))
+                return Unauthorized();
+
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == request.TenantId && t.IsActive, cancellationToken);
+            if (tenant == null)
+                return NotFound(new { Message = "Tenant organization not found or inactive." });
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            // Generate token with switched tenant
+            var token = _jwtTokenGenerator.GenerateToken(user);
+
+            var permissions = await _sender.Send(new GetMyPermissionsQuery(userId), cancellationToken);
+
+            return Ok(new
+            {
+                AccessToken = token,
+                TenantId = tenant.Id,
+                TenantName = tenant.Name,
+                Permissions = permissions
+            });
         }
     }
 }

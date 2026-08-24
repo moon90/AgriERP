@@ -128,8 +128,40 @@
     <!-- Main Application Shell Content -->
     <main class="main-content">
         <header class="top-header">
-            <div class="header-left">
-                <span class="tenant-badge">🏢 AgriERP Enterprise Tenant</span>
+            <div class="header-left" style="display: flex; align-items: center; gap: 1rem;">
+                
+                <!-- Dynamic Multi-Tenant Organization Switcher -->
+                <div style="position: relative;">
+                    <button (click)="toggleTenantDropdown()"
+                            style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-glass); border-radius: 10px; padding: 6px 14px; color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; backdrop-filter: blur(8px);">
+                        <span>🏢</span>
+                        <span style="color: var(--primary-emerald);">{{ (authService.currentTenantName$ | async) || 'Green Valley Organic Estate' }}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">▼</span>
+                    </button>
+
+                    <!-- Organization Dropdown Menu -->
+                    <div *ngIf="showTenantDropdown"
+                         style="position: absolute; top: calc(100% + 8px); left: 0; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-glass); border-radius: 12px; min-width: 280px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); backdrop-filter: blur(16px); z-index: 1000; overflow: hidden; padding: 6px;">
+                        <div style="padding: 8px 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; border-bottom: 1px solid var(--border-glass);">
+                            Switch Farm Organization
+                        </div>
+                        <div *ngFor="let tenant of tenants"
+                             (click)="selectTenant(tenant)"
+                             style="padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.85rem; color: #ffffff;"
+                             onmouseover="this.style.background='rgba(16, 185, 129, 0.15)'"
+                             onmouseout="this.style.background='transparent'">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.1rem;">🌾</span>
+                                <div>
+                                    <div style="font-weight: 600;">{{ tenant.name }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ tenant.subdomain || 'Primary Domain' }}</div>
+                                </div>
+                            </div>
+                            <span *ngIf="tenant.name === (authService.currentTenantName$ | async)" class="badge-pill badge-emerald" style="font-size: 0.65rem;">Active</span>
+                        </div>
+                    </div>
+                </div>
+
                 <span class="status-indicator"><span class="dot"></span> System Live</span>
             </div>
 
